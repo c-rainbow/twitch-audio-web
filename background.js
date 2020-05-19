@@ -2,7 +2,6 @@
 var recent_access_token_url = null; // Cache access token URL
 var recent_usher_url = null; // Cache Usher URL
 
-
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (request.message == "get_urls") {
@@ -17,7 +16,6 @@ chrome.runtime.onMessage.addListener(
         }
     }
 );
-
 
 chrome.webRequest.onBeforeRequest.addListener(
     function(details) {

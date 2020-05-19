@@ -1,7 +1,7 @@
 
 
 // Flag to play/not vaudio during development
-const PLAY_FLAG = false;
+const PLAY_FLAG = true;
 
 
 // TODO: Any better way than HTML as string?
@@ -69,9 +69,73 @@ function appendAudioOnlyButton(controlGroup) {
 }
 
 
-function getVideoSrc() {
-    // TODO: Implement
+function parseM3U8(content) {
+    if(!content) {
+        return null;
+    }
+    const lines = content.split('\n');
+    let lastHttps = null;
+    lines.forEach(line => {
+        if (line.indexOf("audio_only") != -1) {
+            console.log("audio_only found");
+        }
+        if (line.startsWith("https://")) {
+            lastHttps = line;
+        }
+    });
+    return lastHttps;
 }
+
+
+function getM3u8Url(response, callback) {
+    let usherUrl = response.usher_url;
+
+    /**
+     * TODO
+     * parse the usher url
+     * ensure that the usher url is not expired
+     * If expired, use accessTokenUrl to get a new usherUrl
+     */
+    const newUsherUrl = usherUrl + "&allow_audio_only=true";
+    console.log("new usher url: " + newUsherUrl)
+
+    fetch(newUsherUrl, {headers:{"Content-Type": 'application/x-mpegURL'}})
+        .then(function(m3u8Response) {
+            console.log("m3u8response:" + JSON.stringify(m3u8Response))
+            console.log("status:" + m3u8Response.status);
+            console.log("statusText:" + m3u8Response.statusText);
+            console.log("headers:" + m3u8Response.headers);
+            m3u8Response.text().then(function(responseText) {
+                const audioM3u8Url = parseM3U8(responseText);
+                if (audioM3u8Url) {
+                    callback(audioM3u8Url);
+                }
+            });
+        })
+}
+
+
+function getVideoSrc(callback) {
+    /**
+     * TODO
+     * Cache 
+     */
+    chrome.runtime.sendMessage({message: "get_urls"}, function(response) {
+        console.log("Response obtained: " + JSON.stringify(response));
+        /**
+         * check validity of response format
+         * parse the usher url
+         * ensure that the usher url is not expired
+         * append allow_audio_only=1
+         * Get data from Usher url request
+         * Parse and get audio_only .m3u8 address
+         * return
+         */
+        let m3u8Url = getM3u8Url(response, callback);
+        callback(m3u8Url);
+    }); 
+}
+
 
 
 (function() {
@@ -106,21 +170,22 @@ buttonDom.addEventListener("click", function() {
     let classes = buttonDom.classList;
     let svgDom = buttonDom.getElementsByClassName("tw-icon__svg")[0]
     if (classes.contains("audio-only-inactive")) {
-        // Activate
-        classes.remove("audio-only-inactive")
-        classes.add("audio-only-active")
-        svgDom.innerHTML = activeRect;
+        getVideoSrc(function(videoSrc) {
+            // Activate
+            classes.remove("audio-only-inactive")
+            classes.add("audio-only-active")
+            svgDom.innerHTML = activeRect;
 
-        console.log("class activated");
-        if (PLAY_FLAG) {
-            // TODO: Stop video if it is playing
-            let videoSrc = getVideoSrc();
-            hls.loadSource(videoSrc);
-            hls.attachMedia(audioElem); 
-            hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                audioElem.play();
-            });
-        }
+            console.log("class activated");
+            if (PLAY_FLAG) {
+                // TODO: Stop video if it is playing
+                hls.loadSource(videoSrc);
+                hls.attachMedia(audioElem); 
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    audioElem.play();
+                });
+            }
+        });
     }
     else if (classes.contains("audio-only-active")) {
         // Deactivate
