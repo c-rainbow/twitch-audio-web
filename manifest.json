@@ -1,7 +1,7 @@
 {
-    "name": "Getting Started Example",
-    "version": "1.0",
-    "description": "Build an Extension!",
+    "name": "Audio-only Twitch",
+    "version": "0.0.1",
+    "description": "Enables Twitch radio mode in web",
     "manifest_version": 2,
     "permissions": [
         "webRequest",
@@ -10,14 +10,18 @@
         "*://*.ttvnw.net/*"
     ],
     "background":{
-        "scripts": ["background.js"],
-        "persistent": true
+        "scripts": ["background.js"]
     },
     "content_scripts": [
         {
             "matches": ["*://*.twitch.tv/*"],
+            "excludes": [
+                "*://*.twitch.tv/videos/*",
+                "*://*clip*.twitch.tv/*",
+                "*://*.twitch.tv/*/clip/*"
+            ],
             "css": ["custom.css"],
-            "js": ["preload.js", "hls.js", "contentscript.js"]
+            "js": ["hls.js", "contentscript.js"]
         }
     ]
   }

@@ -1,178 +1,144 @@
 
-//(async function() {
+
+// Flag to play/not vaudio during development
+const PLAY_FLAG = false;
 
 
+// TODO: Any better way than HTML as string?
+var initialButtonDom = `
+<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+    <button class="audio-only-button audio-only-inactive tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+            data-a-target="audio-only-button"
+            data-a-player-state="video"
+            aria-label="Audio only">
+        <div class="tw-align-items-center tw-flex tw-flex-grow-0">
+            <span class="tw-button-icon__icon">
+                <div style="width: 2rem; height: 2rem;">
+                    <svg class="tw-icon__svg audio_only_icon" width="100%" height="100%"
+                            version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
+                            viewBox="0 0 100 100">
+                    
+                    </svg>
+                </div>
+            </span>
+        </div>
+    </button>
+    <div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip">
+        Audio only
+    </div>
+</div>
+`;
+   
+var inactiveRect = '<rect width="100" height="100" style="fill:#CCCCCC" />';
+var activeRect = '<rect width="100" height="100" style="fill:#00CC55" />';
 
-var inactive_button_dom = '<div class="tw-inline-flex tw-relative tw-tooltip-wrapper"> <button class="audio-only-inactive tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative" data-a-target="audio-only-button" data-a-player-state="video" aria-label="Audio only"><div class="tw-align-items-center tw-flex tw-flex-grow-0"> <span class="tw-button-icon__icon"><div style="width: 2rem; height: 2rem;"> <svg class="tw-icon__svg" width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 100 100"> </svg></div> </span></div> </button><div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip"> Audio only</div></div>';
+// Reference HLS instance
+var hls = null;
 
 
+function getRequiredDOMs() {
+    // Only proceeds when videoplayer and the control group are available and unique in DOM
+    let videoPlayerElems = document.getElementsByClassName("video-player");
+    if (videoPlayerElems.length != 1) {
+        return null;
+    }
+    let videoPlayer = videoPlayerElems[0];
+
+    let leftControlGroupElems = videoPlayer.getElementsByClassName("player-controls__left-control-group");
+    if (leftControlGroupElems.length != 1) {
+        return null;
+    }
+    let leftControlGroup = leftControlGroupElems[0];
     
-let inactive_rect = '<rect width="100" height="100" style="fill:#CCCCCC" />';
-let active_rect = '<rect width="100" height="100" style="fill:#00CC55" />';
-
-
-let videoPlayer = document.getElementsByClassName("video-player")[0];
-
-
-let leftControlGroup = videoPlayer.getElementsByClassName("player-controls__left-control-group")[0];
-
-let buttonWrapperDom = document.createElement("div")
-buttonWrapperDom.innerHTML = inactive_button_dom;
-let svgDom = buttonWrapperDom.getElementsByClassName("tw-icon__svg")[0]
-svgDom.innerHTML = inactive_rect;
-
-console.log("buttomDom ready")
-leftControlGroup.appendChild(buttonWrapperDom)
-
-
-
-//console.log(d);
-//Wconsole.log(d[0].childNodes[0].childNodes);
-//console.log(d[0].childNodes[0].childNodes.length)
-
-var hls = new Hls({liveSyncDurationCount:0}); // less buffering with smaller value of liveSyncDurationCount
-
-let pauseButton = document.querySelector("button[data-a-target='player-play-pause-button']");
-console.log("pauseButton " +  pauseButton)
-console.log("recent token:" + recent_access_token_url);
-console.log("usher url: " + recent_usher_url);
-
-
-/*
-setTimeout(function() {
-    let state = pauseButton.getAttribute("data-a-player-state");
-    console.log("statef: " + state);
-    if (state == "playing") {
-        //pauseButton.setAttribute("data-a-player-state", "paused")
-        pauseButton.click()
-    }
-}, 5000);
-*/
-
-
-
-let buttonDom = buttonWrapperDom.getElementsByTagName("button")[0]
-buttonDom.addEventListener("click", function() {
-    let classes = buttonDom.classList;
-    if (classes.contains("audio-only-inactive")) {
-        classes.remove("audio-only-inactive")
-        classes.add("audio-only-active")
-        // Activate
-        svgDom.innerHTML = active_rect;
-        alert("class activated")
-
-    }
-    else {
-        // Deactivate
-        classes.remove("audio-only-active")
-        classes.add("audio-only-inactive")
-
-        alert("cladd deactivated")
-        svgDom.innerHTML = inactive_rect;
-    }
-});
-
-
-
-/*
-let newDom = document.createElement("div");
-newDom.classList.add("temporary-class-name")
-
-let newVideo = document.createElement("audio")
-//newVideo.classList.add("nodisplay")
-newDom.appendChild(newVideo)
-
-let pauseAudio = document.createElement("button")
-pauseAudio.innerHTML = "PAUSE"
-
-let resumeAudio = document.createElement("button")
-resumeAudio.innerHTML = "PLAY"
-
-
-newDom.appendChild(pauseAudio)
-newDom.appendChild(resumeAudio)
-
-
-pauseAudio.addEventListener("click", function() {
-    newVideo.pause()
-    hls.stopLoad()
-    hls.detachMedia()
-});
-
-resumeAudio.addEventListener("click", function() {
-    hls.loadSource(videoSrc);
-    hls.attachMedia(newVideo);
-    hls.on(Hls.Events.MANIFEST_PARSED, function() {
-        newVideo.play();
-    });
-});
-
-
-
-let videoSrc = ""
-//videoSrc = null;
-
-
-let state = pauseButton.getAttribute("data-a-player-state");
-console.log("state: " + state);
-//pauseButton.click()
-//state = pauseButton.getAttribute("data-a-player-state");
-//console.log("state: " + state);
-
-
-let container = d[0].childNodes[0];
-
-container.childNodes.forEach(function(elem) {
-    elem.classList.add("nodisplay");
-});
-
-container.appendChild(newDom)
-
-
-if (videoSrc) {
-    console.log("videoSrc not null")
-    if(Hls.isSupported()) {
-        hls.loadSource(videoSrc);
-        hls.attachMedia(newVideo);
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            newVideo.play();
-        });
-    }
-    else {
-        console.log("HLS not supported")
+    return {
+        player: videoPlayer,
+        controls: leftControlGroup
     }
 }
 
 
+function appendAudioOnlyButton(controlGroup) {
+    // TODO: Any better way to create elements than .innerHTML?
+    let buttonWrapperDom = document.createElement("div")
+    buttonWrapperDom.innerHTML = initialButtonDom;
 
-//doit();
-
-//setTimeout(doit, 5000);
-
-*/
-
-
+    let svgDom = buttonWrapperDom.getElementsByClassName("tw-icon__svg")[0]
+    svgDom.innerHTML = inactiveRect;
+    controlGroup.appendChild(buttonWrapperDom);
+    return buttonWrapperDom;
+}
 
 
-/*
-setTimeout(() => {
+function getVideoSrc() {
+    // TODO: Implement
+}
 
+
+(function() {
     
-    console.log("World!"); 
-    let container = d[0].childNodes[0];
+let requiredDoms = getRequiredDOMs();
+if (requiredDoms == null) {
+    return;
+}
+let videoPlayer = requiredDoms.player;
+let controlGroup = requiredDoms.controls;
 
-    container.childNodes.forEach(function(elem) {
-        elem.classList.add("nodisplay");
-    });
+// Video Play/Pause button
+let pauseButton = controlGroup.querySelector("button[data-a-target='player-play-pause-button']");
+if (!pauseButton) {
+    console.log("Play/Pause button is not found. The DOM structure may have changed.");
+    return;
+}
+
+let buttonWrapperDom = appendAudioOnlyButton(controlGroup);
+
+// less buffering with smaller value of liveSyncDurationCount
+hls = new Hls({liveSyncDurationCount:0});
+
+// Reference video/audio element for sound
+let audioElem = document.createElement("video");
+audioElem.style.display = "none";
+videoPlayer.appendChild(audioElem);
+
+// Add listeners to the audio-only button
+let buttonDom = buttonWrapperDom.getElementsByTagName("button")[0];
+buttonDom.addEventListener("click", function() {
+    let classes = buttonDom.classList;
+    let svgDom = buttonDom.getElementsByClassName("tw-icon__svg")[0]
+    if (classes.contains("audio-only-inactive")) {
+        // Activate
+        classes.remove("audio-only-inactive")
+        classes.add("audio-only-active")
+        svgDom.innerHTML = activeRect;
+
+        console.log("class activated");
+        if (PLAY_FLAG) {
+            // TODO: Stop video if it is playing
+            let videoSrc = getVideoSrc();
+            hls.loadSource(videoSrc);
+            hls.attachMedia(audioElem); 
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                audioElem.play();
+            });
+        }
+    }
+    else if (classes.contains("audio-only-active")) {
+        // Deactivate
+        classes.remove("audio-only-active")
+        classes.add("audio-only-inactive")
+        svgDom.innerHTML = inactiveRect;
+
+        console.log("class deactivated");
+        if (PLAY_FLAG) {
+            audioElem.pause()
+            hls.stopLoad()
+            hls.detachMedia()  // Attach/detach is needed for every play/pause?
+        }
+    }
+    else {
+        console.log("not active or inactive?????")
+    }
+});
 
 
-    let newDom = document.createElement("div");
-    newDom.classList.add("temporary-class-name")
-
-    container.appendChild(newDom)
-
-
-}, 10000);
-*/
-
-//}());
+})();
