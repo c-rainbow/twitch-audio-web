@@ -1,5 +1,52 @@
 
 
+
+
+
+
+
+
+
+const twitchDomain = "twitch.tv/"
+
+// These are not channels, but reserved paths in twitch.tv for other purposes.
+// The list doesn't have to be comprehensive. The audio-only button will not be
+// usable in non-video pages. Just having a shortcut to filter some of invalid channel names
+const nonChannels = ["directory", "videos", "u", "settings"];
+
+function getChannelName() {
+    let url = location.href;
+    console.log("channel name from " + url);
+    let domainEnds = url.indexOf(twitchDomain);
+    if (domainEnds == -1) {
+        console.log("Channel name cannot be found from " + url);
+        return null;
+    }
+    let startIndex = domainEnds + twitchDomain.length;
+    let nextSlashIndex = url.indexOf("/", startIndex + 1);
+    if (nextSlashIndex == -1) {
+        let cn = url.substring(startIndex);  // The URL ends with streamer channel name
+        console.log("Channel nameeeee " + cn + ", from URL: " + url)
+        return cn;
+    }
+
+    let channelName = url.substring(startIndex, nextSlashIndex);
+    // Filter out some non-channel pages with similar URL pattern as channel pages
+    if (channelName in nonChannels) {
+        return null;
+    }
+    console.log("Channel name " + channelName + ", from URL: " + url)
+    return channelName;
+}
+
+
+
+
+
+
+
+
+
 // Flag to play/not vaudio during development
 const PLAY_FLAG = true;
 
@@ -101,10 +148,6 @@ function getM3u8Url(response, callback) {
 
     fetch(newUsherUrl, {headers:{"Content-Type": 'application/x-mpegURL'}})
         .then(function(m3u8Response) {
-            console.log("m3u8response:" + JSON.stringify(m3u8Response))
-            console.log("status:" + m3u8Response.status);
-            console.log("statusText:" + m3u8Response.statusText);
-            console.log("headers:" + m3u8Response.headers);
             m3u8Response.text().then(function(responseText) {
                 const audioM3u8Url = parseM3U8(responseText);
                 if (audioM3u8Url) {
@@ -120,7 +163,7 @@ function getVideoSrc(callback) {
      * TODO
      * Cache 
      */
-    chrome.runtime.sendMessage({message: "get_urls"}, function(response) {
+    chrome.runtime.sendMessage({message: "get_urls", channelName: getChannelName()}, function(response) {
         console.log("Response obtained: " + JSON.stringify(response));
         /**
          * check validity of response format
@@ -131,8 +174,12 @@ function getVideoSrc(callback) {
          * Parse and get audio_only .m3u8 address
          * return
          */
-        let m3u8Url = getM3u8Url(response, callback);
-        callback(m3u8Url);
+        if (response) {
+            getM3u8Url(response, callback);
+        }
+        else {
+            console.log("Response is null or undefined")
+        }
     }); 
 }
 
@@ -157,10 +204,18 @@ if (!pauseButton) {
 let buttonWrapperDom = appendAudioOnlyButton(controlGroup);
 
 // less buffering with smaller value of liveSyncDurationCount
-hls = new Hls({liveSyncDurationCount:0});
+hls = new Hls({
+    //debug: true,
+    liveSyncDuration: 0,
+    liveMaxLatencyDuration: 5,
+    liveDurationInfinity: true  // true for live stream
+});
+
+// debug
+//getChannelName();
 
 // Reference video/audio element for sound
-let audioElem = document.createElement("video");
+let audioElem = document.createElement("audio");
 audioElem.style.display = "none";
 videoPlayer.appendChild(audioElem);
 
@@ -179,10 +234,15 @@ buttonDom.addEventListener("click", function() {
             console.log("class activated");
             if (PLAY_FLAG) {
                 // TODO: Stop video if it is playing
+                if (!videoSrc) {
+                    console.log("diveoSrc is wierd: " + videoSrc)
+                }
                 hls.loadSource(videoSrc);
                 hls.attachMedia(audioElem); 
                 hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    audioElem.play();
+                    audioElem.play().then(function() {
+                        console.log("Play started");
+                    });
                 });
             }
         });
@@ -205,5 +265,12 @@ buttonDom.addEventListener("click", function() {
     }
 });
 
+// Event to mark end of stream
+//Hls.Events.BUFFER_EOS.
+
+
+// What is this event?
+//Hls.Events.STREAM_STATE_TRANSITION
+//Hls.Events.ERROR
 
 })();

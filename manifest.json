@@ -5,7 +5,6 @@
     "manifest_version": 2,
     "permissions": [
         "webRequest",
-        "webRequestBlocking",
         "*://*.twitch.tv/*",
         "*://*.ttvnw.net/*"
     ],
@@ -15,11 +14,6 @@
     "content_scripts": [
         {
             "matches": ["*://*.twitch.tv/*"],
-            "excludes": [
-                "*://*.twitch.tv/videos/*",
-                "*://*clip*.twitch.tv/*",
-                "*://*.twitch.tv/*/clip/*"
-            ],
             "css": ["custom.css"],
             "js": ["hls.js", "contentscript.js"]
         }
