@@ -4,7 +4,7 @@ const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
 const controlGroupClass = "player-controls__left-control-group";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
-const volumnSliderAttr = "[button[data-a-target='player-volume-slider']";
+const volumnSliderAttr = "button[data-a-target='player-volume-slider']";
 
 /**
  * VideoPlayer class
@@ -31,10 +31,14 @@ const volumnSliderAttr = "[button[data-a-target='player-volume-slider']";
  * 
  */
 class VideoPlayer {
-    constructor(playerId, playerElem) {
+    constructor(playerId, container, playerElem, controlGroupElem, playButtonElem, volumeSliderElem) {
         this.playerId = playerId;
+        this.container = container;
         this.playerElem = playerElem;
-        this.createNewPlayer(playerElem)
+        this.controlGroupElem = controlGroupElem;
+        this.playButtonElem = playButtonElem;
+        this.volumeSliderElem = volumeSliderElem;
+        
         this.hls = new Hls({
             //debug: true,
             liveSyncDuration: 0,
@@ -46,51 +50,31 @@ class VideoPlayer {
         this.audioElem = document.createElement("audio");
         this.audioElem.style.display = "none";
         this.playerElem.appendChild(this.audioElem);
+        this.populateComponents();
     }
 
-    createNewPlayer(playerElem) {
-        const config = { attributes: false, childList: true, subtree: true };
+    populateComponents() {
+        this.addAudioOnlyButton();
+
         const buttonConfig = { attributes: true, childList: false, subtree: false };
-        const callback = function(mutaitonList, observer) {
-            let controlGoupElem = this.playerElem.getElementsByClassName(controlGroupClass);
-            if(!controlGoupElem) {
-                return;
-            }
-            let playButtonElem = this.playerElem.querySelector(playButtonAttr);
-            let volumeSliderElem = this.playerElem.querySelector(volumnSliderAttr);
-            if(!playButtonElem || !volumeSliderElem) {
-                return;
-            }
-            this.controlGoupElem = controlGoupElem;
-            this.playButtonElem = playButtonElem;
-            this.volumnSliderElem = volumeSliderElem;
-
-            // TODO: Add audio-only button
-            this.addAudioOnlyButton(controlGoupElem);
             
-            // MutationObserver to playButtonElem
-            let playButtonCallback = function(mutationList, observer) {
-                const state = this.playButtonElem.getAttribute("data-a-player-state");
-                if(state == "playing") {  // From paused to playing
-                    this.pause();  // Pause audio
-                }                
-            }
-            this.playButtonObserver = MutationObserver(playButtonCallback);
-            this.playButtonObserver.observe(this.playButtonElem, buttonConfig);
-            
-            // MutationObserver to volumeSlider
-            let volumeChangeCallback = function(mutationList, observer) {
-                const volume = this.volumnSliderElem.value;
-                this.audioElem.volume = volume;
-            }
-            this.volumeObserver = MutationObserver(volumeChangeCallback);
-            this.volumeObserver.observe(this.volumnSliderElem, buttonConfig);
-
-            observer.destroy()
-            return;
-        };
-        const observer = MutationObserver(callback);
-        observer.observe(this.playerElem, config)
+        // MutationObserver to playButtonElem
+        let playButtonCallback = function(mutationList, observer) {
+            const state = this.playButtonElem.getAttribute("data-a-player-state");
+            if(state == "playing") {  // From paused to playing
+                this.pause();  // Pause audio
+            }                
+        }
+        this.playButtonObserver = MutationObserver(playButtonCallback);
+        this.playButtonObserver.observe(this.playButtonElem, buttonConfig);
+        
+        // MutationObserver to volumeSlider
+        let volumeChangeCallback = function(mutationList, observer) {
+            const volume = this.volumeSliderElem.value;
+            this.audioElem.volume = volume;
+        }
+        this.volumeObserver = MutationObserver(volumeChangeCallback);
+        this.volumeObserver.observe(this.volumeSliderElem, buttonConfig);
     }
 
     play(mediaUrl) {
@@ -109,23 +93,36 @@ class VideoPlayer {
 
     pause() {
         if(this.hls) {
-            this.hls.pause();
+            this.audioElem.pause();
+            this.hls.stopLoad();
+            this.hls.detachMedia();
         }
     }
 
-    destroy() {
-
+    destroy() {  // What else to do here?
+        this.pause();
+        this.playButtonObserver.disconnect();
+        this.volumeObserver.disconnect();
     }
 
-    appendAudioOnlyButton(controlGroup) {
+    appendAudioOnlyButton() {
         // TODO: Use webpack html loader
+        // TODO: Disable the button in clip and (also VOD?)
         let buttonWrapperDom = document.createElement("div")
         buttonWrapperDom.innerHTML = initialButtonDom;
     
         let svgDom = buttonWrapperDom.getElementsByClassName("tw-icon__svg")[0]
         svgDom.innerHTML = inactiveRect;
-        controlGroup.appendChild(buttonWrapperDom);
+        this.controlGroupElem.appendChild(buttonWrapperDom);
         return buttonWrapperDom;
+    }
+
+    requestPlay() {
+        const channel = getChannelFromWebUrl();
+        chrome.runtime.sendMessage({message: "get_audio_url", channel: channel}, function(response) {
+            this.play(response.audioStreamUrl);
+            // TODO: Change audioOnlyButton icon
+        }); 
     }
 }
 
@@ -161,7 +158,7 @@ export default class VideoPlayerContainer {
         // Find existing video player elements to create VideoPlayer objects
         findVideoPlayerElems();
 
-        // Detect future vider player elements
+        // Detect future video player elements
         const config = { attributes: false, childList: true, subtree: true };
         this.observer = MutationObserver(this.findVideoPlayerElems);
         this.observer.observe(document.body, config);
@@ -220,3 +217,8 @@ export default class VideoPlayerContainer {
         this.observer.disconnect();
     }
 }
+
+
+
+
+//chrome.onTabUpdate()

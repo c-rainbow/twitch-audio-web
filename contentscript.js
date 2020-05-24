@@ -1,11 +1,11 @@
 
+'use strict';
 
 
 
+import Module from "src/test"
 
-
-
-
+Module();
 
 const twitchDomain = "twitch.tv/"
 
@@ -87,12 +87,14 @@ function getRequiredDOMs() {
     // Only proceeds when videoplayer and the control group are available and unique in DOM
     let videoPlayerElems = document.getElementsByClassName("video-player");
     if (videoPlayerElems.length != 1) {
+        console.log("videoPlayer length" + videoPlayerElems.length);
         return null;
     }
     let videoPlayer = videoPlayerElems[0];
 
     let leftControlGroupElems = videoPlayer.getElementsByClassName("player-controls__left-control-group");
     if (leftControlGroupElems.length != 1) {
+        console.log("controlgroup length" + leftControlGroupElems.length);
         return null;
     }
     let leftControlGroup = leftControlGroupElems[0];
@@ -185,14 +187,31 @@ function getVideoSrc(callback) {
 
 
 
-(function() {
+
+var main = (function() {
+
+console.log("Inside contentscript. URL: " + location.href);
+
+//debugger;
     
 let requiredDoms = getRequiredDOMs();
 if (requiredDoms == null) {
+    console.log("Required DOM not exists: " + JSON.stringify(requiredDoms))
     return;
 }
 let videoPlayer = requiredDoms.player;
 let controlGroup = requiredDoms.controls;
+
+
+
+
+
+if(!videoPlayer) {
+    console.log("No videoplayer");
+}
+if (!controlGroup) {
+    console.log("No control group");
+}
 
 // Video Play/Pause button
 let pauseButton = controlGroup.querySelector("button[data-a-target='player-play-pause-button']");
@@ -200,6 +219,8 @@ if (!pauseButton) {
     console.log("Play/Pause button is not found. The DOM structure may have changed.");
     return;
 }
+
+//console.log(console.invalid.invalid);
 
 let buttonWrapperDom = appendAudioOnlyButton(controlGroup);
 
@@ -273,4 +294,33 @@ buttonDom.addEventListener("click", function() {
 //Hls.Events.STREAM_STATE_TRANSITION
 //Hls.Events.ERROR
 
-})();
+});//();
+
+// identify an element to observe
+var elementToObserve = document.querySelector("body");
+
+// create a new instance of `MutationObserver` named `observer`, 
+// passing it a callback function
+var observer = new MutationObserver(function(mutationList, observer) {
+    console.log('callback that runs when observer is triggered');
+    //let videoPlayerElems = document.getElementsByClassName("video-player");
+
+    let requiredDoms = getRequiredDOMs()
+    if(!requiredDoms.player || !requiredDoms.controls) {
+        console.log("Required DOMs not available yet")
+        return;
+    }
+    let pauseButton = requiredDoms.controls.querySelector("button[data-a-target='player-play-pause-button']");
+    if (!pauseButton) {
+        console.log("Play/Pause button not yet available.");
+        return;
+    }
+
+    console.log("required DOMs and button available")
+    observer.disconnect();
+    main();
+});
+
+// call `observe` on that MutationObserver instance, 
+// passing it the element to observe, and the options object
+observer.observe(elementToObserve, {subtree: true, attributes: false, childList: true});
