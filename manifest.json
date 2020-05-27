@@ -6,16 +6,24 @@
     "permissions": [
         "webRequest",
         "*://*.twitch.tv/*",
-        "*://*.ttvnw.net/*"
+        "*://*.ttvnw.net/*",
+        "<all_urls>"
     ],
     "background":{
-        "scripts": ["background.js"]
+        "scripts": ["dist/background_combined.js"]
     },
     "content_scripts": [
         {
-            "matches": ["*://*.twitch.tv/*"],
+            "run_at": "document_idle",
+            "matches": [
+                "*://*.twitch.tv/*",
+                "<all_urls>"
+            ],
             "css": ["custom.css"],
-            "js": ["hls.js", "contentscript.js"]
+            "js": [
+                "src/hls.js",
+                "dist/contentscript_combined.js"
+            ]
         }
     ]
   }

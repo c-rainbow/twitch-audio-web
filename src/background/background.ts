@@ -1,15 +1,37 @@
 
-import { getChannelFromUsherUrl } from "./url_utils.js";
+import {
+    getChannelFromTokenUrl,
+    getChannelFromUsherUrl,
+    //parseQueryString,
+    appendAllowAudioOnly,
+    buildUsherUrl 
+} from "../common/url_utils.js";
+import UsherUrl from "../common/usher_url.js";
 
 var accessTokenUrlMap = {};  // map of channel(string) to url(string)
 var usherUrlMap = {};  // map of channel(string) to {url:string, expiresAt: number}
 
-function getAudioStreamUrl(channel) {
+
+function getAudioStreamUrl(channel: string) {
     const usherUrl = getUsherUrl(channel);
     const content = fetchContent(usherUrl);
     const streamUrl = getAudioOnlyUrl(content);
     return streamUrl;
 }
+
+function parseQueryString(url: string) {
+    const startIndex = url.indexOf("?");
+    const queryStrings = url.substring(startIndex + 1);
+    const splited = queryStrings.split("&");
+    
+    let queryStringArray = [];
+    splited.forEach(function(item) {
+        const itemSplited = item.split("=");
+        if(itemSplited) queryStringArray.push(itemSplited);
+    })
+    return queryStringArray;
+}
+
 
 function getExpirationTime(tokenString) {
     try {
@@ -90,7 +112,7 @@ chrome.webRequest.onBeforeRequest.addListener(
         let channelName = getChannelFromTokenUrl(details.url);
         console.log("Token request: " + details.url)
         if(channelName) {
-            access_token_url_map[channelName] = details.url;
+            accessTokenUrlMap[channelName] = details.url;
         }
     },
     {urls: ["*://api.twitch.tv/api/channels/*/access_token*"]}
@@ -99,10 +121,22 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 chrome.webRequest.onBeforeRequest.addListener(
     function(details) {
-        let channelName = getChannelFromUsherUrl(details.url);
         console.log("Usher request: " + details.url);
+        const usherUrlObj = new UsherUrl(details.url);
         const newUsherUrl = appendAllowAudioOnly(details.url);
-        // TODO: Update usherUrlMap after parsing the usher url and getting token expiration date
+        // const 
+        // Update usherUrlMap after getting token expiration date
+        const queryStringMap = parseQueryString(newUsherUrl);
+        let tokenValue = null;
+        for(let [key, value] of queryStringMap) {
+            if(key == "token") {
+                tokenValue = value;
+                break;
+            }
+        }
+        const expiresAt = getExpirationTime(tokenValue);
+        const channel = getChannelFromUsherUrl(details.url);
+        usherUrlMap[channel] = {url: url, expiresAt: expiresAt};
     },
     {urls: ["*://usher.ttvnw.net/*"]}
 );

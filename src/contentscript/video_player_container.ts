@@ -1,5 +1,42 @@
 
 
+import "../common/url_utils.js";
+import "../common/usher_url.js";
+import "../common/fetch.js";
+
+
+// TODO: Any better way than HTML as string?
+var initialButtonDom = `
+<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+    <button class="audio-only-button audio-only-inactive tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+            data-a-target="audio-only-button"
+            data-a-player-state="video"
+            aria-label="Audio only">
+        <div class="tw-align-items-center tw-flex tw-flex-grow-0">
+            <span class="tw-button-icon__icon">
+                <div style="width: 2rem; height: 2rem;">
+                    <svg class="tw-icon__svg audio_only_icon" width="100%" height="100%"
+                            version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
+                            viewBox="0 0 100 100">
+                    
+                    </svg>
+                </div>
+            </span>
+        </div>
+    </button>
+    <div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip">
+        Audio only
+    </div>
+</div>
+`;
+   
+var inactiveRect = '<rect width="100" height="100" style="fill:#CCCCCC" />';
+var activeRect = '<rect width="100" height="100" style="fill:#00CC55" />';
+
+
+
+
+
 const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
 const controlGroupClass = "player-controls__left-control-group";
@@ -38,7 +75,9 @@ class VideoPlayer {
         this.controlGroupElem = controlGroupElem;
         this.playButtonElem = playButtonElem;
         this.volumeSliderElem = volumeSliderElem;
-        
+    }
+
+    run() {
         this.hls = new Hls({
             //debug: true,
             liveSyncDuration: 0,

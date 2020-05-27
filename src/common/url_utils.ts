@@ -1,5 +1,5 @@
 
-const twitchDomain = "twitch.tv/"
+const twitchDomain = "twitch.tv/";
 // Non-exhuastive list of non-channel routes in twitch.tv
 const nonChannels = ["directory", "videos", "u", "settings"];
 
@@ -7,7 +7,7 @@ const apiDomain = "api.twitch.tv/api/channels/";
 const accessToken = "/access_token";
 
 const usherDomain = "usher.ttvnw.net/api/channel/hls/";
-const usherExt = ".m3u8"
+const usherExt = ".m3u8";
 
 
 // TODO: Instead of pre-defined url format, use recently used ont in Twitch web
@@ -70,7 +70,7 @@ export function getChannelFromUsherUrl(usherUrl) {
 
 
 // Get channel between the first occurance of startStr and the first endStr after startStr.
-function getNameBetweenStrings(url, startStr, endStr, endOptional=false) {
+export function getNameBetweenStrings(url, startStr, endStr, endOptional=false) {
     let startIndex = url.indexOf(startStr);
     if(startIndex == -1) {
         return null;
@@ -86,17 +86,3 @@ function getNameBetweenStrings(url, startStr, endStr, endOptional=false) {
 }
 
 
-export function parseQueryString(url) {
-    const startIndex = url.indexOf("?");
-    const queryStrings = url.substring(startIndex + 1);
-    const splited = queryStrings.split("&");
-    
-    let parsed = {};
-    splited.forEach(function(item) {
-        const itemSplited = item.split("=");
-        if(itemSplited) {
-            parsed[itemSplited[0]] = itemSplited[1];
-        }
-    })
-    return parsed;
-}
