@@ -4,18 +4,24 @@ import { getNameBetweenStrings, getChannelFromWebUrl } from "./url_utils.js";
 
 export default class UsherUrl {
 
+    originalUrl: string;
+    channel: string;
+    queryStringList: string[][];
+    path: string;
+    expiresAt: number;
+    urlObject: URL;
 
     // TODO: Use https://developer.mozilla.org/en-US/docs/Web/API/URL as possible
-
-    constructor(url) {
+    constructor(url: string) {
         this.originalUrl = url;
+        this.urlObject = new URL(url);
         this.channel = getChannelFromWebUrl(url);
         this.queryStringList = this.parseQueryString(url);
         this.path = this.getPath(url);
         this.expiresAt = this.getExpirationTime(this.queryStringList);
     }
 
-    getPath(url) {
+    getPath(url: string) : string {
         const endIndex = url.indexOf("?");
         if(endIndex == -1) {
             return url;
@@ -23,12 +29,12 @@ export default class UsherUrl {
         return url.substring(0, endIndex);
     }
 
-    parseQueryString(url) {
+    parseQueryString(url: string) : string[][] {
         const startIndex = url.indexOf("?");
         const queryStrings = url.substring(startIndex + 1);
         const splited = queryStrings.split("&");
         
-        let queryStringArray = [];
+        const queryStringArray: string[][] = [];
         splited.forEach(function(item) {
             const itemSplited = item.split("=");
             if(itemSplited) queryStringArray.push(itemSplited);
@@ -36,22 +42,22 @@ export default class UsherUrl {
         return queryStringArray;
     }
 
-    getExpirationTime(queryStringList) {
-        const tokenQueryString = queryStringList.find(item => item[0] == "token");
-        if(!tokenQueryString) return null;
-        const tokenJsonString = tokenQueryString[1];
+    getExpirationTime(queryStringList: string[][]) : number {
+        const expiresQueryString = queryStringList.find(item => item[0] == "expiresAt");
+        if(!expiresQueryString) return null;
+
         try {
-            // TODO: Not sure if tokenJsonString is still URL-encoded.
-            const tokenJson = json.parse(tokenJsonString);
-            return tokenJson.expires;
+            // expiresQueryString looks like ["2020-05-17T09:44:09Z"]
+            const expiresAt = Date.parse(expiresQueryString[0]);
+            return expiresAt / 1000;  // Milliseconds to seconds
         }
         catch(err) {
-            console.log("Cannot parse token in usher URL: " + tokenJsonString);
+            console.log("Cannot parse token in usher URL: " + expiresQueryString[0]);
         }
         return null;
     }
 
-    getChannelFromUsherUrl(usherUrl) {
+    getChannelFromUsherUrl(usherUrl: string) : string {
         const channel = getNameBetweenStrings(usherUrl, usherDomain, usherExt);
         console.log("channel name parsed usher: " + channel);
         return channel;

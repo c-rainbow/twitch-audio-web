@@ -1,4 +1,7 @@
 
+
+import { VideoPlayerContainer } from "./video_player_container.js";
+
 /**
  * When document_idle state (the default time when contentscript is loaded)
  * Watch DOM changes in body for video-player
@@ -137,7 +140,7 @@
 
 
 
-
+var container = new VideoPlayerContainer();
 
  
 

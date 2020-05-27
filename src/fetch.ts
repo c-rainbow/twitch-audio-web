@@ -1,6 +1,6 @@
 
 
-export async function fetchContent(url) {
+export async function fetchContent(url: string) {
     if(!url) return null;
     const response = await fetch(url);
     // TODO: Check if the status if ok
@@ -9,11 +9,11 @@ export async function fetchContent(url) {
 }
 
 
-export async function fetchJson(url) {
+export async function fetchJson(url: string) {
     const respText = await fetchContent(url);
     if(respText) {
         try {
-            const respJson = json.parse(respText);
+            const respJson = JSON.parse(respText);
             return respJson;
         }
         catch(err) {

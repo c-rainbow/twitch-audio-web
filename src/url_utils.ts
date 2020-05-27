@@ -1,24 +1,24 @@
 
-const twitchDomain = "twitch.tv/";
+const twitchDomain : string = "twitch.tv/";
 // Non-exhuastive list of non-channel routes in twitch.tv
-const nonChannels = ["directory", "videos", "u", "settings"];
+const nonChannels : string[] = ["directory", "videos", "u", "settings"];
 
-const apiDomain = "api.twitch.tv/api/channels/";
-const accessToken = "/access_token";
+const apiDomain : string = "api.twitch.tv/api/channels/";
+const accessToken : string = "/access_token";
 
-const usherDomain = "usher.ttvnw.net/api/channel/hls/";
-const usherExt = ".m3u8";
+const usherDomain : string = "usher.ttvnw.net/api/channel/hls/";
+const usherExt : string = ".m3u8";
 
 
 // TODO: Instead of pre-defined url format, use recently used ont in Twitch web
-export function buildUsherUrl(channel, token, sig, random_number) {
+export function buildUsherUrl(channel: string, token: string, sig: string, random_number: number) : string {
     const url = `http://usher.twitch.tv/api/channel/hls/{channel}.m3u8?player=twitchweb&token={token}&sig={sig}&allow_audio_only=true&allow_source=true&type=any&p={random_number}`;
     return url;
 }
 
 
 // If necessary, append allow_audio_only=1 query string at the end of URL
-export function appendAllowAudioOnly(usherUrl) {
+export function appendAllowAudioOnly(usherUrl: string) : string {
     // TODO: the function always appends the querystring at the end.
     // It needs to fully parse the url and append/replace only when necessary.
     return usherUrl + "&allow_audio_only=1";
@@ -29,7 +29,7 @@ export function appendAllowAudioOnly(usherUrl) {
 // Returns the first occurance of a URL after audio_only metadata.
 // TODO: This works, but eventually we will need to fully parse the content
 // and get audio_only stream url
-export function getAudioOnlyUrl(content) {
+export function getAudioOnlyUrl(content: string) : string {
     if(!content) {
         return null;
     }
@@ -43,9 +43,9 @@ export function getAudioOnlyUrl(content) {
 }
 
 
-export function getChannelFromWebUrl() {
+export function getChannelFromWebUrl(weburl?: string) : string {
     // Channel name may not be available from the main page URL
-    const url = location.href;
+    const url = weburl || location.href;
     const channel = getNameBetweenStrings(url, twitchDomain, "/", true);
     console.log("Channel name " + channel + ", from URL: " + url)
 
@@ -55,14 +55,14 @@ export function getChannelFromWebUrl() {
 }
 
 
-export function getChannelFromTokenUrl(accessTokenUrl) {
+export function getChannelFromTokenUrl(accessTokenUrl: string) : string {
     const channel = getNameBetweenStrings(accessTokenUrl, apiDomain, accessToken);
     console.log("channel name parsed access token: " + channel);
     return channel;
 }
 
 
-export function getChannelFromUsherUrl(usherUrl) {
+export function getChannelFromUsherUrl(usherUrl: string) : string {
     const channel = getNameBetweenStrings(usherUrl, usherDomain, usherExt);
     console.log("channel name parsed usher: " + channel);
     return channel;
@@ -70,7 +70,8 @@ export function getChannelFromUsherUrl(usherUrl) {
 
 
 // Get channel between the first occurance of startStr and the first endStr after startStr.
-export function getNameBetweenStrings(url, startStr, endStr, endOptional=false) {
+export function getNameBetweenStrings(
+        url: string, startStr: string, endStr: string, endOptional: boolean = false) : string {
     let startIndex = url.indexOf(startStr);
     if(startIndex == -1) {
         return null;

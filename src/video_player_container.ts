@@ -1,8 +1,9 @@
 
 
-import "../common/url_utils.js";
-import "../common/usher_url.js";
-import "../common/fetch.js";
+import {getChannelFromWebUrl} from "./url_utils";
+import "./usher_url";
+import "./fetch";
+import { Hls } from "./hls.js";
 
 
 // TODO: Any better way than HTML as string?
@@ -68,7 +69,24 @@ const volumnSliderAttr = "button[data-a-target='player-volume-slider']";
  * 
  */
 class VideoPlayer {
-    constructor(playerId, container, playerElem, controlGroupElem, playButtonElem, volumeSliderElem) {
+    playerId: string;
+    container: VideoPlayerContainer;
+    playerElem: HTMLElement;
+    controlGroupElem: HTMLElement;
+    playButtonElem: HTMLElement;
+    volumeSliderElem: HTMLElement;
+    hls: typeof Hls;
+    audioElem: HTMLAudioElement;
+    playButtonObserver: MutationObserver;
+    volumeObserver: MutationObserver;
+
+    constructor(
+            playerId: string,
+            container: VideoPlayerContainer,
+            playerElem: HTMLElement,
+            controlGroupElem: HTMLElement,
+            playButtonElem: HTMLElement,
+            volumeSliderElem: HTMLElement) {
         this.playerId = playerId;
         this.container = container;
         this.playerElem = playerElem;
@@ -93,37 +111,37 @@ class VideoPlayer {
     }
 
     populateComponents() {
-        this.addAudioOnlyButton();
+        this.appendAudioOnlyButton();
 
         const buttonConfig = { attributes: true, childList: false, subtree: false };
             
         // MutationObserver to playButtonElem
-        let playButtonCallback = function(mutationList, observer) {
+        let playButtonCallback: MutationCallback = function(mutationList, observer) {
             const state = this.playButtonElem.getAttribute("data-a-player-state");
             if(state == "playing") {  // From paused to playing
                 this.pause();  // Pause audio
             }                
         }
-        this.playButtonObserver = MutationObserver(playButtonCallback);
+        this.playButtonObserver = new MutationObserver(playButtonCallback);
         this.playButtonObserver.observe(this.playButtonElem, buttonConfig);
         
         // MutationObserver to volumeSlider
-        let volumeChangeCallback = function(mutationList, observer) {
+        let volumeChangeCallback: MutationCallback = function(mutationList, observer) {
             const volume = this.volumeSliderElem.value;
             this.audioElem.volume = volume;
         }
-        this.volumeObserver = MutationObserver(volumeChangeCallback);
+        this.volumeObserver = new MutationObserver(volumeChangeCallback);
         this.volumeObserver.observe(this.volumeSliderElem, buttonConfig);
     }
 
-    play(mediaUrl) {
+    play(mediaUrl: string) {
         if(!mediaUrl) {
             console.log("No mediaUrl is found to play")
             return;
         }
-        hls.loadSource(mediaUrl);
-        hls.attachMedia(audioElem); 
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        this.hls.loadSource(mediaUrl);
+        this.hls.attachMedia(this.audioElem); 
+        this.hls.on(Hls.Events.MANIFEST_PARSED, function() {
             this.audioElem.play().then(function() {
                 console.log("Play started");
             });
@@ -157,7 +175,7 @@ class VideoPlayer {
     }
 
     requestPlay() {
-        const channel = getChannelFromWebUrl();
+        const channel = getChannelFromWebUrl(); 
         chrome.runtime.sendMessage({message: "get_audio_url", channel: channel}, function(response) {
             this.play(response.audioStreamUrl);
             // TODO: Change audioOnlyButton icon
@@ -190,33 +208,36 @@ class VideoPlayer {
  *      3-2-1-5. Change audio-only button to "activated"
  */
 export default class VideoPlayerContainer {
+    players: VideoPlayer[];
+    nextId: number;
+    observer: MutationObserver;
+
+
     constructor() {
         this.players = [];
         this.nextId = 10001;  // Random start index for player.
         
         // Find existing video player elements to create VideoPlayer objects
-        findVideoPlayerElems();
+        this.findVideoPlayerElems();
 
         // Detect future video player elements
         const config = { attributes: false, childList: true, subtree: true };
-        this.observer = MutationObserver(this.findVideoPlayerElems);
+        this.observer = new MutationObserver(this.findVideoPlayerElems);
         this.observer.observe(document.body, config);
     }
 
     findVideoPlayerElems() {
         // TODO: Is it better to iterate only the mutated divs?
-        playerElems = document.body.getElementsByClassName(videoPlayerClass);
-        playerElems.forEach(function(playerElem) {
-            if(!playerElem.classList.contains(videoPlayerProcessedClass)) {
-                this.tryCreatingNewPlayer(playerElem);
-            }
-        });
+        const playerElems = document.body.getElementsByClassName(videoPlayerClass);
+        for(let playerElem of playerElems) {
+            this.tryCreatingNewPlayer(playerElem as HTMLElement);
+        }
     }
 
-    tryCreatingNewPlayer(playerElem) {
+    tryCreatingNewPlayer(playerElem: HTMLElement) {
         // Check if all required DOMs are ready
-        let controlGoupElem = playerElem.getElementsByClassName(controlGroupClass);
-        if(!controlGoupElem) {
+        let controlGroupElems = playerElem.getElementsByClassName(controlGroupClass);
+        if(!controlGroupElems) {
             return;
         }
         let playButtonElem = playerElem.querySelector(playButtonAttr);
@@ -231,18 +252,21 @@ export default class VideoPlayerContainer {
         playerElem.classList.add(videoPlayerProcessedClass);
         playerElem.classList.add(newPlayerId);
 
+        const controlGroupElem = controlGroupElems[0] as HTMLElement
+
         let player = new VideoPlayer(
-            newPlayerId, this, playerElem, controlGroupElem, playButtonElem, volumeSliderElem);
+            newPlayerId, this, playerElem, controlGroupElem, playButtonElem as HTMLElement,
+            volumeSliderElem as HTMLElement);
         this.players.push(player);
     }
 
-    pauseExcept(playerId) {
+    pauseExcept(playerId: string) {
         this.players.forEach(function(player) {
             if(player.playerId != playerId) player.pause();
         });
     }
 
-    play(playerId) {
+    play(playerId: string) {
         this.players.forEach(function(player) {
             if(player.playerId == playerId) player.play();
         });

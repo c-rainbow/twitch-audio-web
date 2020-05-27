@@ -1,30 +1,33 @@
 
+
 import {
     getChannelFromTokenUrl,
     getChannelFromUsherUrl,
-    //parseQueryString,
     appendAllowAudioOnly,
+    getAudioOnlyUrl,
     buildUsherUrl 
-} from "../common/url_utils.js";
-import UsherUrl from "../common/usher_url.js";
+} from "./url_utils";
+import {fetchContent, fetchJson} from "./fetch";
+import UsherUrl from "./usher_url";
 
-var accessTokenUrlMap = {};  // map of channel(string) to url(string)
-var usherUrlMap = {};  // map of channel(string) to {url:string, expiresAt: number}
+var accessTokenUrlMap: Map<string, string> = new Map();  // map of channel(string) to url(string)
+var usherUrlMap: Map<string, UsherUrl> = new Map();  // map of channel(string) to {url:string, expiresAt: number}
 
 
-function getAudioStreamUrl(channel: string) {
-    const usherUrl = getUsherUrl(channel);
-    const content = fetchContent(usherUrl);
+async function getAudioStreamUrl(channel: string) : Promise<string> {
+    const usherUrl = await getUsherUrl(channel);
+    const content = await fetchContent(usherUrl);
     const streamUrl = getAudioOnlyUrl(content);
     return streamUrl;
 }
+
 
 function parseQueryString(url: string) {
     const startIndex = url.indexOf("?");
     const queryStrings = url.substring(startIndex + 1);
     const splited = queryStrings.split("&");
     
-    let queryStringArray = [];
+    let queryStringArray: string[][] = [];
     splited.forEach(function(item) {
         const itemSplited = item.split("=");
         if(itemSplited) queryStringArray.push(itemSplited);
@@ -33,9 +36,9 @@ function parseQueryString(url: string) {
 }
 
 
-function getExpirationTime(tokenString) {
+function getExpirationTime(tokenString: string) {
     try {
-        const tokenJson = json.parse(tokenString);
+        const tokenJson = JSON.parse(tokenString);
         return tokenJson.expires;
     }
     catch(err) {
@@ -61,9 +64,9 @@ function getExpirationTime(tokenString) {
   *                 2-1-2-2-2. Callback with null
   *     2-2. If usherUrl exists and is not expired, callback with it.
   */
-async function getUsherUrl(channel) {
+async function getUsherUrl(channel: string) : Promise<string> {
     // Check if there is a cached version
-    let usherProp = usherUrlMap[channel];
+    let usherProp = usherUrlMap.get(channel);
     if(usherProp) {
         const now = new Date();
         const secondsSinceEpoch = Math.round(now.getTime() / 1000);
@@ -71,20 +74,22 @@ async function getUsherUrl(channel) {
         if(usherProp.expiresAt < secondsSinceEpoch - 60) return usherProp.url;
     }
     // Cached usherUrl expired or does not exist
-    const tokenUrl = accessTokenUrlMap[channel];
+    const tokenUrl = accessTokenUrlMap.get(channel);
     if(!tokenUrl) {
         console.log("Access token URL is not found for channel " + channel);
         return null;
     }
 
     const respJson = fetchJson(tokenUrl);
-    const expiresAt = getExpirationTime(respJson.token);
-    if(expiresAt) {
-        const url = buildUsherUrl(channel, respJson.token, respJson.sig, random_number);
-        usherUrlMap[channel] = {url: url, expiresAt: expiresAt};
-        return url;
-    }
-    return null;
+    respJson.then(function(respJsonObj) {
+        const expiresAt = getExpirationTime(respJsonObj.token);
+        if(expiresAt) {
+            const url = buildUsherUrl(channel, respJsonObj.token, respJsonObj.sig, random_number);
+            usherUrlMap.set(channel, usherUrl);
+            return url;
+        }
+        return null;
+    });
 }
 
 
