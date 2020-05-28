@@ -44,8 +44,8 @@ export default class UsherUrl {
 
         try {
             const tokenJson = JSON.parse(tokenString);
-            const expires = <number>tokenJson.expires;
-            return expires / 1000;  // Milliseconds to seconds
+            const expiresAt = tokenJson.expires as number;
+            return expiresAt;
         }
         catch(err) {
             console.log(`Cannot parse token in usher URL. Error: ${err}`);

@@ -15,7 +15,7 @@ const initialButtonDom = `
 <div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
     <button class="audio-only-button tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
             data-a-target="audio-only-button"
-            data-a-player-state="video"
+            data-a-player-state="paused"
             aria-label="Audio only">
         <div class="tw-align-items-center tw-flex tw-flex-grow-0">
             <span class="tw-button-icon__icon">
@@ -148,21 +148,31 @@ class VideoPlayer {
             console.log("No mediaUrl is found to play")
             return;
         }
-        debugger;
-        if(this.hls) {
-            this.hls.loadSource(mediaUrl);
-            this.hls.attachMedia(this.audioElem); 
-            this.audioElem.play().then(function() {
-                console.log("Play started");
-            });
-            /*this.hls.on("hlsManifestParsed", function() {
-                this.audioElem.play().then(function() {
-                    console.log("Play started");
-                });
-            });*/
+
+        this.hls = new Hls({
+            //debug: true,
+            liveSyncDuration: 0,
+            liveMaxLatencyDuration: 5,
+            liveDurationInfinity: true  // true for live stream
+        });
+        this.hls.loadSource(mediaUrl);
+        this.hls.attachMedia(this.audioElem); 
+        // TODO: Is this safe to play right away after attaching the media?
+        // The main example at hls.js website tells to user MANIFEST_PARSED event,
+        // but for some reason it doesn't work with typescript+webpack.
+        this.audioElem.play().then(function() {
+            console.log("Play started");
+        });
+
+        // Stop the video if playing
+        const videoState = this.playButtonElem.getAttribute("data-a-player-state");
+        if(videoState == "playing") {
+            // Is there a better way than this "click" hack?
+            this.playButtonElem.click();
         }
 
         // Change the audio-only button icon
+        this.audioOnlyButton.setAttribute("data-a-player-state", "playing");
         const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
         const classes = svgDom.classList;
         if(classes.contains("audio-only-svg-paused")) {
@@ -176,9 +186,14 @@ class VideoPlayer {
             this.audioElem.pause();
             this.hls.stopLoad();
             this.hls.detachMedia();
+            this.hls.destroy();
+            // There seems to be a bug that the HLS object gets stuck after multiple plays and pauses
+            // if it is re-used for the next play. Need to destroy the object and re-create it.
+            this.hls = null;
         }
 
         // Change the audio-only button icon
+        this.audioOnlyButton.setAttribute("data-a-player-state", "paused");
         const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
         const classes = svgDom.classList;
         if(classes.contains("audio-only-svg-playing")) {
@@ -201,7 +216,13 @@ class VideoPlayer {
     
         this.audioOnlyButton = buttonWrapperDom.getElementsByTagName("button")[0];
         const onclickCallback = function() {
-            this.requestPlay();
+            const state = this.audioOnlyButton.getAttribute("data-a-player-state");
+            if(state === "paused") {
+                this.requestPlay();
+            }
+            else {
+                this.pause();
+            }
         }
         this.audioOnlyButton.onclick = onclickCallback.bind(this);
         this.controlGroupElem.appendChild(buttonWrapperDom);
@@ -254,9 +275,7 @@ export default class VideoPlayerContainer {
     findVideoPlayerElems() {
         // TODO: Is it better to iterate only the mutated divs?
         const playerElems = document.body.getElementsByClassName(videoPlayerClass);
-        //for(let playerElem of playerElems) {
-        for(let i = 0; i < playerElems.length; i++) {
-            const playerElem = playerElems[i];
+        for(let playerElem of playerElems) {
             // If the div is not already processed
             if(!playerElem.classList.contains(videoPlayerProcessedClass)) {
                 this.tryCreatingNewPlayer(playerElem as HTMLElement);
@@ -310,4 +329,3 @@ export default class VideoPlayerContainer {
     }
 }
 
-//chrome.onTabUpdate()

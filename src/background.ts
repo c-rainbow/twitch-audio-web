@@ -2,8 +2,7 @@
 
 import {
     getChannelFromTokenUrl,
-    getChannelFromUsherUrl,
-    parseAudioOnlyUrl
+    getChannelFromUsherUrl
 } from "./url_utils";
 import UsherUrl from "./usher_url";
 import {GetUrlsResponse} from "./data_types";
@@ -15,8 +14,19 @@ var accessTokenUrlMap: Map<string, string> = new Map();
 var usherUrlMap: Map<string, UsherUrl> = new Map();
 
 
-function handleGetUrlsMessage(channel: string, callbackFunc: Function) {
+function handleGetUrlsMessage(channel: string) : GetUrlsResponse {
     const callbackObj: GetUrlsResponse = {channel: channel, accessTokenUrl: null, usherUrl: null};
+
+    // Get Access Token URL
+    const tokenUrl = accessTokenUrlMap.get(channel);
+    if(tokenUrl) {
+        callbackObj.accessTokenUrl = tokenUrl;
+    }
+    else {
+        console.debug("Access token URL is not found for channel " + channel);
+    }
+
+    // Get Usher URL
     const cachedUsherUrlObj = usherUrlMap.get(channel);
     if(cachedUsherUrlObj) {
         const now = new Date();
@@ -25,39 +35,32 @@ function handleGetUrlsMessage(channel: string, callbackFunc: Function) {
         if(secondsSinceEpoch + 60 < cachedUsherUrlObj.expiresAt) {
             callbackObj.usherUrl = cachedUsherUrlObj.getUrl();
         }
-        console.log(`Cached URL for ${channel} is expired`);
-    }
-
-    // Cached usherUrl expired or does not exist
-    const tokenUrl = accessTokenUrlMap.get(channel);
-    if(tokenUrl) {
-        callbackObj.accessTokenUrl = tokenUrl;
+        console.debug(`Cached URL for ${channel} is expired`);
     }
     else {
-        console.log("Access token URL is not found for channel " + channel);
-        callbackObj.accessTokenUrl = null;
+        console.debug(`No cached usherUrl object for channel ${channel}`);
     }
-    callbackFunc(callbackObj);
+
+    return callbackObj;
 }
 
 
 chrome.runtime.onMessage.addListener(
     function(request: any, sender: any, sendResponse: Function) {
-        
         if (request.message !== "get_audio_url") {
             console.debug("message is not get_audio_url");
             sendResponse(null);
             return;
         }
 
-        // TODO: Channel name may not be available for livestream in the main page
         if(!request.channel) {
             console.debug("Twitch channel name is not included in the request");
             sendResponse(null);
             return;
         }
 
-        handleGetUrlsMessage(request.channel, sendResponse);
+        const responseObj = handleGetUrlsMessage(request.channel);
+        sendResponse(responseObj);
     }
 );
 

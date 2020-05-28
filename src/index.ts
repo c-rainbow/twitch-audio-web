@@ -1,7 +1,6 @@
 import VideoPlayerContainer from "./video_player_container";
+import { getChannelFromWebUrl } from "./url_utils";
 
 
-//(function() {
-    var player = new VideoPlayerContainer();
-    player.run();
-//})();
+var container = new VideoPlayerContainer();
+container.run();
