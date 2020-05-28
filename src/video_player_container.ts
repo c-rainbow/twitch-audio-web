@@ -60,13 +60,6 @@ class VideoPlayer {
     }
 
     run() {
-        this.hls = new Hls({
-            //debug: true,
-            liveSyncDuration: 0,
-            liveMaxLatencyDuration: 5,
-            liveDurationInfinity: true  // true for live stream
-        });
-
         // Create a separate <audio> tag to play audio
         this.audioElem = document.createElement("video");
         this.audioElem.style.display = "none";
@@ -237,6 +230,7 @@ export default class VideoPlayerContainer {
         for(let playerElem of playerElems) {
             // If the div is not already processed
             if(!playerElem.classList.contains(videoPlayerProcessedClass)) {
+                console.debug("New video player detected");
                 this.tryCreatingNewPlayer(playerElem as HTMLElement);
             }
         }

@@ -1,6 +1,6 @@
 {
   "name": "twitch_audio",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/c-rainbow/twitch-audio-web/issues"
   },

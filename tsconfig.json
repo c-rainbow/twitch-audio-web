@@ -2,7 +2,6 @@
     "compilerOptions": {
         "sourceMap": true,
         "noImplicitAny": true,
-        //"lib": ["es2015", "dom"],
         "module": "es2015",
         "target": "es2015",
         "jsx": "react", 

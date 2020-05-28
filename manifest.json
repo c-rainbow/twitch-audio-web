@@ -1,6 +1,6 @@
 {
     "name": "Audio-only Twitch",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Enables Twitch radio mode in web",
     "manifest_version": 2,
     "permissions": [
@@ -9,16 +9,15 @@
         "*://*.ttvnw.net/*"
     ],
     "background":{
-        "scripts": ["./dist/background_combined.js"]
+        "scripts": ["./dist/background.js"]
     },
     "content_scripts": [
         {
             "matches": [
                 "*://*.twitch.tv/*"
             ],
-            "css": ["custom.css"],
-            "js": ["./src/hls.js", "./dist/contentscript_combined.js"]
+            "css": ["./css/custom.css"],
+            "js": ["./include/hls.js/hls.js", "./dist/contentscript.js"]
         }
-    ],
-    "web_accessible_resources": ["svg/*.svg"]
+    ]
   }
