@@ -2,10 +2,10 @@
 
 import {
     getChannelFromTokenUrl,
-    getChannelFromUsherUrl
-} from "./url_utils";
-import UsherUrl from "./usher_url";
-import {GetUrlsResponse} from "./data_types";
+    getChannelFromUsherUrl,
+    GetUrlsResponse,
+    UsherUrl
+} from "./url";
 
 
 // Map of channel(string) to url(string)

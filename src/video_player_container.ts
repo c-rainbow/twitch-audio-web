@@ -1,13 +1,6 @@
 
-
-//var chrome = require("chrome"); 
-//import chrome from "chrome";
-//import "chrome";
-//import Hls from "hls.js";
-
-
-import { getUsherUrl, getAudioStreamUrl } from "./fetch";
-import { GetUrlsResponse } from "./data_types";
+import { fetchUsherUrl, fetchAudioStreamUrl } from "./fetch";
+import { getChannelFromWebUrl, GetUrlsResponse } from "./url";
 
 
 // TODO: Any better way than HTML as string?
@@ -41,43 +34,6 @@ const videoPlayerProcessedClass = "video-player-processed";
 const controlGroupClass = "player-controls__left-control-group";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
 const volumnSliderAttr = "input[data-a-target='player-volume-slider']";
-
-
-
-
-const twitchDomain : string = "twitch.tv/";
-// Non-exhuastive list of non-channel routes in twitch.tv
-const nonChannels : string[] = ["directory", "videos", "u", "settings"];
-
-function getChannelFromWebUrl(weburl?: string) : string {
-    // Channel name may not be available from the main page URL
-    const url = weburl || location.href;
-    const channel = getNameBetweenStrings(url, twitchDomain, "/", true);
-    console.log("Channel name " + channel + ", from URL: " + url)
-
-    // Filter out some non-channel pages with similar URL pattern as channel pages
-    if (channel in nonChannels) return null;
-    return channel;
-}
-
-
-// Get channel between the first occurance of startStr and the first endStr after startStr.
-function getNameBetweenStrings(
-        url: string, startStr: string, endStr: string, endOptional: boolean = false) : string {
-    let startIndex = url.indexOf(startStr);
-    if(startIndex == -1) {
-        return null;
-    }
-    startIndex += startStr.length;
-
-    let endIndex = url.indexOf(endStr, startIndex + 1);
-    if(endIndex == -1) {
-        if(endOptional) endIndex = url.length;
-        else return null;
-    }
-    return url.substring(startIndex, endIndex);
-}
-
 
 
 class VideoPlayer {
@@ -158,16 +114,19 @@ class VideoPlayer {
         this.hls.loadSource(mediaUrl);
         this.hls.attachMedia(this.audioElem); 
         // TODO: Is this safe to play right away after attaching the media?
-        // The main example at hls.js website tells to user MANIFEST_PARSED event,
-        // but for some reason it doesn't work with typescript+webpack.
+        // The main example at hls.js website tells to use MANIFEST_PARSED event,
+        // but for some reason the event is not triggered with typescript+webpack.
         this.audioElem.play().then(function() {
             console.log("Play started");
         });
 
+        // NOTE: There is 1~3 seconds of delay between audio-only button click and sound being played.
+        // It's better to show some intermediate state (icon change, mouse cursor change, etc) in the meanwhile
+
         // Stop the video if playing
         const videoState = this.playButtonElem.getAttribute("data-a-player-state");
         if(videoState == "playing") {
-            // Is there a better way than this "click" hack?
+            // Is there a better way to pause video than this "click" hack?
             this.playButtonElem.click();
         }
 
@@ -239,10 +198,10 @@ class VideoPlayer {
 
             let usherUrl = response.usherUrl;
             if(!usherUrl) {
-                usherUrl = await getUsherUrl(response.channel, response.accessTokenUrl);
+                usherUrl = await fetchUsherUrl(response.channel, response.accessTokenUrl);
             }
             
-            const audioStreamUrl = await getAudioStreamUrl(usherUrl);
+            const audioStreamUrl = await fetchAudioStreamUrl(usherUrl);
             this.container.pauseExcept(this.playerId);
             this.play(audioStreamUrl);
         }
