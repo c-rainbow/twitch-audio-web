@@ -1,24 +1,29 @@
 
-import { getNameBetweenStrings, getChannelFromWebUrl } from "./url_utils.js";
+import { getChannelFromUsherUrl } from "./url_utils";
+
+
+function getRandomNumber() : number {
+    return Math.floor(Math.random() * 1000000);
+}
 
 
 export default class UsherUrl {
-
     originalUrl: string;
-    channel: string;
-    queryStringList: string[][];
-    path: string;
-    expiresAt: number;
     urlObject: URL;
+    channel: string;
+    expiresAt: number;  // Token expiration datetime in epoch seconds
 
     // TODO: Use https://developer.mozilla.org/en-US/docs/Web/API/URL as possible
     constructor(url: string) {
         this.originalUrl = url;
         this.urlObject = new URL(url);
-        this.channel = getChannelFromWebUrl(url);
-        this.queryStringList = this.parseQueryString(url);
-        this.path = this.getPath(url);
-        this.expiresAt = this.getExpirationTime(this.queryStringList);
+        this.channel = this.getChannel();        
+        this.expiresAt = this.getExpiresAt();
+        this.setQueryString("allow_audio_only", "true");
+    }
+
+    getUrl() : string {
+        return this.urlObject.toString();
     }
 
     getPath(url: string) : string {
@@ -29,37 +34,39 @@ export default class UsherUrl {
         return url.substring(0, endIndex);
     }
 
-    parseQueryString(url: string) : string[][] {
-        const startIndex = url.indexOf("?");
-        const queryStrings = url.substring(startIndex + 1);
-        const splited = queryStrings.split("&");
-        
-        const queryStringArray: string[][] = [];
-        splited.forEach(function(item) {
-            const itemSplited = item.split("=");
-            if(itemSplited) queryStringArray.push(itemSplited);
-        })
-        return queryStringArray;
+    getQueryString(key: string) : string {
+        const value = this.urlObject.searchParams.get(key);
+        return value;
     }
 
-    getExpirationTime(queryStringList: string[][]) : number {
-        const expiresQueryString = queryStringList.find(item => item[0] == "expiresAt");
-        if(!expiresQueryString) return null;
+    setQueryString(name: string, value: string) {
+        this.urlObject.searchParams.set(name, value);
+    }
+
+    getExpiresAt() : number {
+        const tokenString = this.getQueryString("token");
+        if(!tokenString) return null;
 
         try {
-            // expiresQueryString looks like ["2020-05-17T09:44:09Z"]
-            const expiresAt = Date.parse(expiresQueryString[0]);
-            return expiresAt / 1000;  // Milliseconds to seconds
+            const tokenJson = JSON.parse(tokenString);
+            const expires = <number>tokenJson.expires;
+            return expires / 1000;  // Milliseconds to seconds
         }
         catch(err) {
-            console.log("Cannot parse token in usher URL: " + expiresQueryString[0]);
+            console.log(`Cannot parse token in usher URL. Error: ${err}`);
         }
         return null;
     }
 
-    getChannelFromUsherUrl(usherUrl: string) : string {
-        const channel = getNameBetweenStrings(usherUrl, usherDomain, usherExt);
-        console.log("channel name parsed usher: " + channel);
+    getChannel() : string {
+        const channel = getChannelFromUsherUrl(this.originalUrl);
         return channel;
+    }
+
+    update(newToken: string, newSig: string) {
+        this.setQueryString("token", newToken);
+        this.setQueryString("sig", newSig);
+        this.setQueryString("p", getRandomNumber().toString());
+        this.expiresAt = this.getExpiresAt();
     }
 }

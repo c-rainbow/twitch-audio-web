@@ -3,49 +3,39 @@
 import {
     getChannelFromTokenUrl,
     getChannelFromUsherUrl,
-    appendAllowAudioOnly,
-    getAudioOnlyUrl,
-    buildUsherUrl 
+    parseAudioOnlyUrl
 } from "./url_utils";
 import {fetchContent, fetchJson} from "./fetch";
 import UsherUrl from "./usher_url";
 
-var accessTokenUrlMap: Map<string, string> = new Map();  // map of channel(string) to url(string)
-var usherUrlMap: Map<string, UsherUrl> = new Map();  // map of channel(string) to {url:string, expiresAt: number}
+
+// Map of channel(string) to url(string)
+var accessTokenUrlMap: Map<string, string> = new Map();
+// Map of channel(string) to url(UsherUrl)
+var usherUrlMap: Map<string, UsherUrl> = new Map();
 
 
 async function getAudioStreamUrl(channel: string) : Promise<string> {
     const usherUrl = await getUsherUrl(channel);
     const content = await fetchContent(usherUrl);
-    const streamUrl = getAudioOnlyUrl(content);
+    const streamUrl = parseAudioOnlyUrl(content);
     return streamUrl;
 }
 
 
-function parseQueryString(url: string) {
-    const startIndex = url.indexOf("?");
-    const queryStrings = url.substring(startIndex + 1);
-    const splited = queryStrings.split("&");
+// TODO: Instead of pre-defined url format, use recently used ont in Twitch web
+function buildUsherUrl(channel: string, token: string, sig: string) : UsherUrl {
+    const usherUrl = new UsherUrl(`http://usher.twitch.tv/api/channel/hls/${channel}.m3u8`);
+    usherUrl.update(token, sig);
+
+    // It is not clear if all of these params are required or if there are any missing ones.
+    usherUrl.setQueryString("player", "twitchweb");
+    usherUrl.setQueryString("allow_source", "true");
+    usherUrl.setQueryString("type", "any");
     
-    let queryStringArray: string[][] = [];
-    splited.forEach(function(item) {
-        const itemSplited = item.split("=");
-        if(itemSplited) queryStringArray.push(itemSplited);
-    })
-    return queryStringArray;
+    return usherUrl;
 }
 
-
-function getExpirationTime(tokenString: string) {
-    try {
-        const tokenJson = JSON.parse(tokenString);
-        return tokenJson.expires;
-    }
-    catch(err) {
-        console.log("Could not get token expiration time from " + tokenString);
-    }
-    return null;
-}
 
  /**
   * Getting the video url
@@ -66,13 +56,17 @@ function getExpirationTime(tokenString: string) {
   */
 async function getUsherUrl(channel: string) : Promise<string> {
     // Check if there is a cached version
-    let usherProp = usherUrlMap.get(channel);
-    if(usherProp) {
+    let cachedUrl = usherUrlMap.get(channel);
+    if(cachedUrl) {
         const now = new Date();
         const secondsSinceEpoch = Math.round(now.getTime() / 1000);
         // 60 seconds buffer before token expiration
-        if(usherProp.expiresAt < secondsSinceEpoch - 60) return usherProp.url;
+        if(secondsSinceEpoch + 60 < cachedUrl.expiresAt) {
+            return cachedUrl.getUrl();
+        }
+        console.log(`Cached URL for ${channel} is expired`);
     }
+
     // Cached usherUrl expired or does not exist
     const tokenUrl = accessTokenUrlMap.get(channel);
     if(!tokenUrl) {
@@ -80,44 +74,57 @@ async function getUsherUrl(channel: string) : Promise<string> {
         return null;
     }
 
-    const respJson = fetchJson(tokenUrl);
-    respJson.then(function(respJsonObj) {
-        const expiresAt = getExpirationTime(respJsonObj.token);
-        if(expiresAt) {
-            const url = buildUsherUrl(channel, respJsonObj.token, respJsonObj.sig, random_number);
-            usherUrlMap.set(channel, usherUrl);
-            return url;
-        }
+    // Get new token and sig from access token URL
+    const respJson = await fetchJson(tokenUrl);
+    if(!respJson) {
         return null;
-    });
+    }
+    
+    const token = respJson.token as string;
+    const sig = respJson.sig as string;
+    if(!token || ! sig) {
+        return null;
+    }
+
+    // In most cases, usherUrl was already cached for this channel.
+    // Just update it.
+    if(cachedUrl) {
+        cachedUrl.update(token, sig);
+        return cachedUrl.getUrl();
+    }
+
+    // Otherwise, create a new one and store it
+    const usherUrl = buildUsherUrl(channel, token, sig);
+    usherUrlMap.set(channel, usherUrl);
+    return usherUrl.getUrl();    
 }
 
 
 chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-        if (request.message == "get_audio_url") {
-            if(request.channel) {
-                const audioStreamUrl = getAudioStreamUrl(request.channel);
-                sendResponse({audioStreamUrl: audioStreamUrl});
-                return;
-            }        
-            // TODO: Channel name may not be available for livestream in the main page
-            console.log("Twitch channel name is not included in the request");
+    function(request: any, sender: any, sendResponse: any) {
+        if (request.message !== "get_audio_url") {
+            return;  // Do nothing
         }
-        else {
-            console.log("What message is this?" + JSON.stringify(request));
+
+        // TODO: Channel name may not be available for livestream in the main page
+        if(!request.channel) {
+            console.debug("Twitch channel name is not included in the request");
+            sendResponse({audioStreamUrl: null});   
         }
-        sendResponse({audioStreamUrl: null});
+
+        getAudioStreamUrl(request.channel).then(
+            audioStreamUrl => sendResponse({audioStreamUrl: audioStreamUrl})
+        );
     }
 );
 
 
 chrome.webRequest.onBeforeRequest.addListener(
-    function(details) {
-        let channelName = getChannelFromTokenUrl(details.url);
+    function(details: any) {
         console.log("Token request: " + details.url)
-        if(channelName) {
-            accessTokenUrlMap[channelName] = details.url;
+        const channel = getChannelFromTokenUrl(details.url);
+        if(channel) {
+            accessTokenUrlMap.set(channel, details.url);
         }
     },
     {urls: ["*://api.twitch.tv/api/channels/*/access_token*"]}
@@ -125,23 +132,11 @@ chrome.webRequest.onBeforeRequest.addListener(
 
 
 chrome.webRequest.onBeforeRequest.addListener(
-    function(details) {
+    function(details: any) {
         console.log("Usher request: " + details.url);
-        const usherUrlObj = new UsherUrl(details.url);
-        const newUsherUrl = appendAllowAudioOnly(details.url);
-        // const 
-        // Update usherUrlMap after getting token expiration date
-        const queryStringMap = parseQueryString(newUsherUrl);
-        let tokenValue = null;
-        for(let [key, value] of queryStringMap) {
-            if(key == "token") {
-                tokenValue = value;
-                break;
-            }
-        }
-        const expiresAt = getExpirationTime(tokenValue);
         const channel = getChannelFromUsherUrl(details.url);
-        usherUrlMap[channel] = {url: url, expiresAt: expiresAt};
+        const usherUrlObj = new UsherUrl(details.url);
+        usherUrlMap.set(channel, usherUrlObj);
     },
     {urls: ["*://usher.ttvnw.net/*"]}
 );

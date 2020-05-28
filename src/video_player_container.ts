@@ -177,8 +177,8 @@ class VideoPlayer {
     requestPlay() {
         const channel = getChannelFromWebUrl(); 
         chrome.runtime.sendMessage({message: "get_audio_url", channel: channel}, function(response) {
+            this.container.pauseExcept(this.playerId);
             this.play(response.audioStreamUrl);
-            // TODO: Change audioOnlyButton icon
         }); 
     }
 }
@@ -216,7 +216,9 @@ export default class VideoPlayerContainer {
     constructor() {
         this.players = [];
         this.nextId = 10001;  // Random start index for player.
-        
+    }
+
+    run() {
         // Find existing video player elements to create VideoPlayer objects
         this.findVideoPlayerElems();
 
@@ -261,23 +263,17 @@ export default class VideoPlayerContainer {
     }
 
     pauseExcept(playerId: string) {
-        this.players.forEach(function(player) {
+        for(let player of this.players) {
             if(player.playerId != playerId) player.pause();
-        });
-    }
-
-    play(playerId: string) {
-        this.players.forEach(function(player) {
-            if(player.playerId == playerId) player.play();
-        });
+        }
     }
 
     destroy() {
-        this.players.forEach(function(player) {
-            player.destroy();
-        })
-        this.players = [];
         this.observer.disconnect();
+        for(let player of this.players) {
+            player.destroy();
+        }
+        this.players = [];
     }
 }
 

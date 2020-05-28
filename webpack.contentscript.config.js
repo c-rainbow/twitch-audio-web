@@ -1,10 +1,10 @@
 const path = require('path');
 
 module.exports = {
-  entry: ['./src/background.ts'],
+  entry: ['./src/index.ts'],
   devtool: 'inline-source-map',
   output: {
-    filename: 'background_combined.js',
+    filename: 'contentscript_combined.js',
     path: path.resolve(__dirname, 'dist'),
   },
   resolve: {

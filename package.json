@@ -1,0 +1,31 @@
+{
+  "name": "twitch_audio",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/c-rainbow/twitch-audio-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/c-rainbow/twitch-audio-web/issues"
+  },
+  "homepage": "https://github.com/c-rainbow/twitch-audio-web#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/chrome": "0.0.114",
+    "css-loader": "^3.5.3",
+    "node": "^14.3.0",
+    "style-loader": "^1.2.1",
+    "ts-loader": "^7.0.5",
+    "ts-node": "^8.10.1",
+    "typescript": "^3.9.3"
+  }
+}

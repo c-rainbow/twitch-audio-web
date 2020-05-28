@@ -10,35 +10,20 @@ const usherDomain : string = "usher.ttvnw.net/api/channel/hls/";
 const usherExt : string = ".m3u8";
 
 
-// TODO: Instead of pre-defined url format, use recently used ont in Twitch web
-export function buildUsherUrl(channel: string, token: string, sig: string, random_number: number) : string {
-    const url = `http://usher.twitch.tv/api/channel/hls/{channel}.m3u8?player=twitchweb&token={token}&sig={sig}&allow_audio_only=true&allow_source=true&type=any&p={random_number}`;
-    return url;
-}
-
-
-// If necessary, append allow_audio_only=1 query string at the end of URL
-export function appendAllowAudioOnly(usherUrl: string) : string {
-    // TODO: the function always appends the querystring at the end.
-    // It needs to fully parse the url and append/replace only when necessary.
-    return usherUrl + "&allow_audio_only=1";
-}
-
-
 // Extract audio_only stream .m3u8 from the master playlist content.
 // Returns the first occurance of a URL after audio_only metadata.
 // TODO: This works, but eventually we will need to fully parse the content
 // and get audio_only stream url
-export function getAudioOnlyUrl(content: string) : string {
+export function parseAudioOnlyUrl(content: string) : string {
     if(!content) {
         return null;
     }
     const lines = content.split('\n');
     let audioOnlyFound = false;
-    lines.forEach(line => {
+    for(let line of lines) {
         if (line.includes("audio_only")) audioOnlyFound = true;
         if (audioOnlyFound && line.startsWith("https://")) return line;
-    });
+    }
     return null;
 }
 

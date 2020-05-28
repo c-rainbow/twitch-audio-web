@@ -1,6 +1,6 @@
 
 
-import { VideoPlayerContainer } from "./video_player_container.js";
+import { VideoPlayerContainer } from "./src/video_player_container.js";
 
 /**
  * When document_idle state (the default time when contentscript is loaded)
