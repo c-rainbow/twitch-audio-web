@@ -1,25 +1,25 @@
 
 
-import {getChannelFromWebUrl} from "./url_utils";
-import "./usher_url";
-import "./fetch";
-import { Hls } from "./hls.js";
+import {getChannelFromWebUrl} from "./url_utils"
+//var chrome = require("chrome"); 
+//import chrome from "chrome";
+//import "chrome";
+//import * as Hls from "hls.js";
 
 
 // TODO: Any better way than HTML as string?
-var initialButtonDom = `
+const initialButtonDom = `
 <div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
-    <button class="audio-only-button audio-only-inactive tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+    <button class="audio-only-button tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
             data-a-target="audio-only-button"
             data-a-player-state="video"
             aria-label="Audio only">
         <div class="tw-align-items-center tw-flex tw-flex-grow-0">
             <span class="tw-button-icon__icon">
-                <div style="width: 2rem; height: 2rem;">
-                    <svg class="tw-icon__svg audio_only_icon" width="100%" height="100%"
-                            version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
-                            viewBox="0 0 100 100">
-                    
+                <div class="button-icon-div" style="width: 2rem; height: 2rem;">
+                    <svg class="tw-icon__svg audio-only-svg-paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.89 2 2 2h16c1.11 0 2-.9 2-2V8c0-1.11-.89-2-2-2H8.3l8.26-3.34L15.88 1 3.24 6.15zM7 20c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-8h-2v-2h-2v2H4V8h16v4z"/>
                     </svg>
                 </div>
             </span>
@@ -31,18 +31,15 @@ var initialButtonDom = `
 </div>
 `;
    
-var inactiveRect = '<rect width="100" height="100" style="fill:#CCCCCC" />';
-var activeRect = '<rect width="100" height="100" style="fill:#00CC55" />';
-
-
-
-
 
 const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
 const controlGroupClass = "player-controls__left-control-group";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
-const volumnSliderAttr = "button[data-a-target='player-volume-slider']";
+const volumnSliderAttr = "input[data-a-target='player-volume-slider']";
+
+const audioButtonPausedClass = "audio-only-button-paused";
+const audioButtonPlayingClass = "audio-only-button-playing";
 
 /**
  * VideoPlayer class
@@ -75,8 +72,9 @@ class VideoPlayer {
     controlGroupElem: HTMLElement;
     playButtonElem: HTMLElement;
     volumeSliderElem: HTMLElement;
-    hls: typeof Hls;
-    audioElem: HTMLAudioElement;
+    audioOnlyButton: HTMLElement;
+    hls: Hls;
+    audioElem: HTMLVideoElement;
     playButtonObserver: MutationObserver;
     volumeObserver: MutationObserver;
 
@@ -96,22 +94,23 @@ class VideoPlayer {
     }
 
     run() {
-        this.hls = new Hls({
+        /*this.hls = new Hls({
             //debug: true,
             liveSyncDuration: 0,
             liveMaxLatencyDuration: 5,
             liveDurationInfinity: true  // true for live stream
-        });
+        });*/
 
         // Create a separate <audio> tag to play audio
-        this.audioElem = document.createElement("audio");
+        this.audioElem = document.createElement("video");
         this.audioElem.style.display = "none";
         this.playerElem.appendChild(this.audioElem);
         this.populateComponents();
     }
 
     populateComponents() {
-        this.appendAudioOnlyButton();
+        const audioOnlyButton = this.appendAudioOnlyButton();
+        this.controlGroupElem.appendChild(audioOnlyButton);
 
         const buttonConfig = { attributes: true, childList: false, subtree: false };
             
@@ -122,7 +121,7 @@ class VideoPlayer {
                 this.pause();  // Pause audio
             }                
         }
-        this.playButtonObserver = new MutationObserver(playButtonCallback);
+        this.playButtonObserver = new MutationObserver(playButtonCallback.bind(this));
         this.playButtonObserver.observe(this.playButtonElem, buttonConfig);
         
         // MutationObserver to volumeSlider
@@ -130,7 +129,7 @@ class VideoPlayer {
             const volume = this.volumeSliderElem.value;
             this.audioElem.volume = volume;
         }
-        this.volumeObserver = new MutationObserver(volumeChangeCallback);
+        this.volumeObserver = new MutationObserver(volumeChangeCallback.bind(this));
         this.volumeObserver.observe(this.volumeSliderElem, buttonConfig);
     }
 
@@ -139,13 +138,23 @@ class VideoPlayer {
             console.log("No mediaUrl is found to play")
             return;
         }
-        this.hls.loadSource(mediaUrl);
-        this.hls.attachMedia(this.audioElem); 
-        this.hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            this.audioElem.play().then(function() {
-                console.log("Play started");
-            });
-        });
+        if(this.hls) {
+            /*this.hls.loadSource(mediaUrl);
+            this.hls.attachMedia(this.audioElem); 
+            this.hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                this.audioElem.play().then(function() {
+                    console.log("Play started");
+                });
+            });*/
+        }
+
+        // Change the audio-only button icon
+        const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
+        const classes = svgDom.classList;
+        if(classes.contains("audio-only-svg-paused")) {
+            classes.remove("audio-only-svg-paused");
+            classes.add("audio-only-svg-playing");
+        }
     }
 
     pause() {
@@ -153,6 +162,14 @@ class VideoPlayer {
             this.audioElem.pause();
             this.hls.stopLoad();
             this.hls.detachMedia();
+        }
+
+        // Change the audio-only button icon
+        const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
+        const classes = svgDom.classList;
+        if(classes.contains("audio-only-svg-playing")) {
+            classes.remove("audio-only-svg-playing");
+            classes.add("audio-only-svg-paused");
         }
     }
 
@@ -165,21 +182,27 @@ class VideoPlayer {
     appendAudioOnlyButton() {
         // TODO: Use webpack html loader
         // TODO: Disable the button in clip and (also VOD?)
-        let buttonWrapperDom = document.createElement("div")
+        const buttonWrapperDom = document.createElement("div")
         buttonWrapperDom.innerHTML = initialButtonDom;
     
-        let svgDom = buttonWrapperDom.getElementsByClassName("tw-icon__svg")[0]
-        svgDom.innerHTML = inactiveRect;
+        this.audioOnlyButton = buttonWrapperDom.getElementsByTagName("button")[0];
+        const onclickCallback = function() {
+            this.requestPlay();
+        }
+        this.audioOnlyButton.onclick = onclickCallback.bind(this);
         this.controlGroupElem.appendChild(buttonWrapperDom);
         return buttonWrapperDom;
     }
 
     requestPlay() {
-        const channel = getChannelFromWebUrl(); 
-        chrome.runtime.sendMessage({message: "get_audio_url", channel: channel}, function(response) {
+        const channel = getChannelFromWebUrl();
+        const responseCallback = function(response: any) {
+            console.debug("response for get_audio_url received: " + JSON.stringify(response));
             this.container.pauseExcept(this.playerId);
             this.play(response.audioStreamUrl);
-        }); 
+        }
+        chrome.runtime.sendMessage(
+            {message: "get_audio_url", channel: channel}, responseCallback);//responseCallback.bind(this)); 
     }
 }
 
@@ -224,7 +247,7 @@ export default class VideoPlayerContainer {
 
         // Detect future video player elements
         const config = { attributes: false, childList: true, subtree: true };
-        this.observer = new MutationObserver(this.findVideoPlayerElems);
+        this.observer = new MutationObserver(this.findVideoPlayerElems.bind(this));
         this.observer.observe(document.body, config);
     }
 
@@ -232,11 +255,18 @@ export default class VideoPlayerContainer {
         // TODO: Is it better to iterate only the mutated divs?
         const playerElems = document.body.getElementsByClassName(videoPlayerClass);
         for(let playerElem of playerElems) {
-            this.tryCreatingNewPlayer(playerElem as HTMLElement);
+            // If the div is not already processed
+            if(!playerElem.classList.contains(videoPlayerProcessedClass)) {
+                this.tryCreatingNewPlayer(playerElem as HTMLElement);
+            }
         }
     }
 
     tryCreatingNewPlayer(playerElem: HTMLElement) {
+        if(playerElem.classList.contains(videoPlayerProcessedClass)) {
+            return;
+        }
+
         // Check if all required DOMs are ready
         let controlGroupElems = playerElem.getElementsByClassName(controlGroupClass);
         if(!controlGroupElems) {
@@ -260,6 +290,7 @@ export default class VideoPlayerContainer {
             newPlayerId, this, playerElem, controlGroupElem, playButtonElem as HTMLElement,
             volumeSliderElem as HTMLElement);
         this.players.push(player);
+        player.run();
     }
 
     pauseExcept(playerId: string) {

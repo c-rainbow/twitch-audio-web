@@ -3,3 +3,11 @@
 .nodisplay {
     display:none;
 }
+
+.audio-only-svg-paused {
+    fill: white !important;
+}
+
+.audio-only-svg-playing {
+    fill: orange !important;
+}

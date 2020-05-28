@@ -10,7 +10,11 @@ module.exports = {
   resolve: {
     extensions: [ '.tsx', '.ts', '.js' ],
   },
+  externals: {
+    hlsjs: 'hls.js'
+  },
   module: {
+      /*noParse: /hls.js|chrome/,*/
       rules: [
           {
               test: /\.css$/,

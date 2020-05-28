@@ -1,7 +1,7 @@
 import VideoPlayerContainer from "./video_player_container";
 
 
-(function() {
-    const player = new VideoPlayerContainer();
+//(function() {
+    var player = new VideoPlayerContainer();
     player.run();
-})();
+//})();

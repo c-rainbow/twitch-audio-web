@@ -103,7 +103,8 @@ async function getUsherUrl(channel: string) : Promise<string> {
 chrome.runtime.onMessage.addListener(
     function(request: any, sender: any, sendResponse: any) {
         if (request.message !== "get_audio_url") {
-            return;  // Do nothing
+            console.debug("message is not get_audio_url");
+            sendResponse({audioStreamUrl: null});
         }
 
         // TODO: Channel name may not be available for livestream in the main page
@@ -112,9 +113,14 @@ chrome.runtime.onMessage.addListener(
             sendResponse({audioStreamUrl: null});   
         }
 
-        getAudioStreamUrl(request.channel).then(
+        const cachedUrl = usherUrlMap.get(request.channel)
+        sendResponse({audioStreamUrl: cachedUrl.getUrl()});
+        //const audioStreamUrl = await getAudioStreamUrl(request.channel)
+        //sendResponse({audioStreamUrl: audioStreamUrl});
+
+        /*const audioStreamUrl = await getAudioStreamUrl(request.channel).then(
             audioStreamUrl => sendResponse({audioStreamUrl: audioStreamUrl})
-        );
+        ); */
     }
 );
 
