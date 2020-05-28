@@ -17,7 +17,7 @@
                 "*://*.twitch.tv/*"
             ],
             "css": ["custom.css"],
-            "js": ["./dist/contentscript_combined.js"]
+            "js": ["./src/hls_.js", "./dist/contentscript_combined.js"]
         }
     ],
     "web_accessible_resources": ["svg/*.svg"]

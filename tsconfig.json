@@ -2,13 +2,16 @@
     "compilerOptions": {
         "sourceMap": true,
         "noImplicitAny": true,
-        "module": "commonjs",
-        "target": "es6",
+        //"lib": ["es2015", "dom"],
+        "module": "es2015",
+        "target": "es2015",
         "jsx": "react", 
         "moduleResolution":"node",
-        "types": ["@types/chrome", "@types/node", "ts-node", "@types/hls.js"],
+        "types": ["@types/chrome", "hls.js"],
         "typeRoots": ["node_modules/@types"],
         "esModuleInterop": true,
-        "allowJs": true
+        "allowSyntheticDefaultImports": true,
+        "allowJs": true,
+        "allowUmdGlobalAccess": true,
     }
 }

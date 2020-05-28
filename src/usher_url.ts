@@ -2,11 +2,6 @@
 import { getChannelFromUsherUrl } from "./url_utils";
 
 
-function getRandomNumber() : number {
-    return Math.floor(Math.random() * 1000000);
-}
-
-
 export default class UsherUrl {
     originalUrl: string;
     urlObject: URL;
@@ -66,7 +61,11 @@ export default class UsherUrl {
     update(newToken: string, newSig: string) {
         this.setQueryString("token", newToken);
         this.setQueryString("sig", newSig);
-        this.setQueryString("p", getRandomNumber().toString());
+        this.setQueryString("p", this.getRandomNumber().toString());
         this.expiresAt = this.getExpiresAt();
+    }
+
+    getRandomNumber() : number {
+        return Math.floor(Math.random() * 1000000);
     }
 }

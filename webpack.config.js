@@ -8,27 +8,10 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
   },
   resolve: {
-    extensions: [ '.tsx', '.ts', '.js' ],
-  },
-  externals: {
-    hlsjs: 'hls.js'
+    extensions: [ '.tsx', '.ts'],
   },
   module: {
-      /*noParse: /hls.js|chrome/,*/
       rules: [
-          {
-              test: /\.css$/,
-              use: [
-                  'style-loader',
-                  'css-loader',
-              ]
-          },
-          {
-              test: /\.(png|svg|jpg|gif)/,
-              use: [
-                  'file-loader',
-              ]
-          },
           {
             test: /\.tsx?$/,
             use: 'ts-loader',
