@@ -16,7 +16,7 @@
             "matches": [
                 "*://*.twitch.tv/*"
             ],
-            "css": ["./css/custom.css"],
+            "css": ["./css/style.css"],
             "js": ["./include/hls.js/hls.js", "./dist/contentscript.js"]
         }
     ]
