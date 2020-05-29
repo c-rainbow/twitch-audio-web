@@ -11,3 +11,7 @@
 .audio-only-svg-playing {
     fill: orange !important;
 }
+
+.audio-only-svg-disabled {
+    fill: gray !important;
+}

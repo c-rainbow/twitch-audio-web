@@ -35,6 +35,70 @@ const controlGroupClass = "player-controls__left-control-group";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
 const volumnSliderAttr = "input[data-a-target='player-volume-slider']";
 
+const radioIconPausedClass = "audio-only-svg-paused";
+const radioIconPlayingClass = "audio-only-svg-playing";
+const radioIconDisabledClass = "audio-only-svg-disabled";
+
+
+/**
+ * Add MutationObserver to 
+ * 1. document.body checks for one subtree change
+ *   1-2. If div with class "video-player", process it
+ * 
+ * 2. video-player class div checks for 1 attribute change, 2 subtree changes
+ *   2-1. attribute "data-a-player-type": "site", "site_mini", "clips-watch"
+ *     2-2-2. Change the mode of VideoPlayer if necessary
+ *   2-2. subtree div with class "vod-seekbar-time-labels" and "seekbar-interaction-area"
+ *     2-2-1. This only appears in VOD watch
+ *     2-2-2. If created, change the mode of VideoPlayer to VOD
+ *     2-2-3. If removed (changed from VOD to live/clip), ????
+ *   2-3. check for control group "player-controls__left-control-group"
+ *     2-3-1. If created, check #3 for actions
+ *     2-3-2. If removed, ?????
+ * 
+ * 3. Control group "player-controls__left-control-group" checks for 
+ *   3-1. subtree button[data-a-target='player-play-pause-button'] for video play/pause button
+ *     3-1-1. If created, check #4
+ *     3-1-2. If removed (when player type changed from "site" to "site_mini", etc), ?????
+ *   3-2. subtree input[data-a-target='player-volume-slider'] for volume slider
+ *     3-2-1. If created, check #5
+ *     3-2-2. If removed (when player type changed from "site" to "site_mini", etc), ?????
+ *   3-3. If both components in 3-1 and 3-2 are ready:
+ *     3-3-1. Create radio mode button, and put MutationObserver (see #4 and #5)
+ *     3-3-2. If at least one component is removed (site->site_mini change, etc)
+ *       3-3-2-1. also remove the radio mode button from DOM
+ * 
+ * 4. Video play/pause button checks for
+ *   4-1. Attribute change "data-a-player-state": "playing" or "paused"
+ *     4-1-1. If attribute value changed to "playing", stop all audio in the VideoPlayerContainer
+ * 
+ * 5. Volume slider checks for
+ *   5-1. Attribute "value" change: number between 0 <= num <= 1
+ *     5-1-1. If change is detected, apply the new volume to audioElem.
+ * 
+ * 6. original "video" element in video-player checks for
+ *   6-1. Attribute "src" change: means that the video source changed (likely hosting another streamer)
+ *     6-1-1. Radio mode button should be disabled? Re-configured with the new streamer's URL?
+ *    
+ */
+
+/**
+ * Keep track of the latest usher request in the tab
+ */
+
+/**
+ * Add radio mode button in site_mini
+ */
+
+/**
+ * "disabled" mode
+ * 
+ * video player data-a-player-type="clips-watch" in clips
+ * 
+ * div class "vod-seekbar-time-labels" in VOD
+ * div class "seekbar-interaction-area" in VOD
+ * 
+ */
 
 class VideoPlayer {
     playerId: string;
@@ -60,10 +124,6 @@ class VideoPlayer {
     }
 
     run() {
-        // Create a separate <audio> tag to play audio
-        this.audioElem = document.createElement("video");
-        this.audioElem.style.display = "none";
-        this.playerElem.appendChild(this.audioElem);
         this.populateComponents();
     }
 
@@ -98,6 +158,16 @@ class VideoPlayer {
             return;
         }
 
+        if(this.audioElem) {
+            console.debug("Audio element already exists");
+            return;
+        }
+
+        // Create a separate <video> element to play audio.
+        // <audio> can be also used by hls.js, but Typescript forces this to be HTMLVideoElement.
+        this.audioElem = document.createElement("video");
+        this.audioElem.style.display = "none";
+        this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
             //debug: true,
             liveSyncDuration: 0,
@@ -127,9 +197,9 @@ class VideoPlayer {
         this.audioOnlyButton.setAttribute("data-a-player-state", "playing");
         const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
         const classes = svgDom.classList;
-        if(classes.contains("audio-only-svg-paused")) {
-            classes.remove("audio-only-svg-paused");
-            classes.add("audio-only-svg-playing");
+        if(classes.contains(radioIconPausedClass)) {
+            classes.remove(radioIconPausedClass);
+            classes.add(radioIconPlayingClass);
         }
     }
 
@@ -142,15 +212,16 @@ class VideoPlayer {
             // There seems to be a bug that the HLS object gets stuck after multiple plays and pauses
             // if it is re-used for the next play. Need to destroy the object and re-create it.
             this.hls = null;
+            this.audioElem = null;
         }
 
         // Change the audio-only button icon
         this.audioOnlyButton.setAttribute("data-a-player-state", "paused");
         const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
         const classes = svgDom.classList;
-        if(classes.contains("audio-only-svg-playing")) {
-            classes.remove("audio-only-svg-playing");
-            classes.add("audio-only-svg-paused");
+        if(classes.contains(radioIconPlayingClass)) {
+            classes.remove(radioIconPlayingClass);
+            classes.add(radioIconPausedClass);
         }
     }
 
@@ -169,11 +240,17 @@ class VideoPlayer {
         this.audioOnlyButton = buttonWrapperDom.getElementsByTagName("button")[0];
         const onclickCallback = function() {
             const state = this.audioOnlyButton.getAttribute("data-a-player-state");
-            if(state === "paused") {
+            if(state === "disabled") {
+                return;
+            }
+            else if(state === "paused") {
                 this.requestPlay();
             }
-            else {
+            else if(state === "playing"){
                 this.pause();
+            }
+            else {
+
             }
         }
         this.audioOnlyButton.onclick = onclickCallback.bind(this);
