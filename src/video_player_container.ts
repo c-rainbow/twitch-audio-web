@@ -41,13 +41,16 @@ const radioIconDisabledClass = "audio-only-svg-disabled";
 
 
 /**
- * Add MutationObserver to 
+ * Create VideoPlayerContainer, add MutationObserver to 
  * 1. document.body checks for one subtree change
- *   1-2. If div with class "video-player", process it
+ *   1-2. If div with class "video-player", process it. Check #2
  * 
- * 2. video-player class div checks for 1 attribute change, 2 subtree changes
+ * 2. Create VideoPlayer, video-player class div checks for 1 attribute change, 3 subtree changes
  *   2-1. attribute "data-a-player-type": "site", "site_mini", "clips-watch"
  *     2-2-2. Change the mode of VideoPlayer if necessary
+ *     2-2-3. Mode: Tuple of (layout, video_type).
+ *       2-2-3-1. layout: "site" | "site_mini"
+ *       2-2-3-2. video_type: "live", "vod", "clip".. and more?????
  *   2-2. subtree div with class "vod-seekbar-time-labels" and "seekbar-interaction-area"
  *     2-2-1. This only appears in VOD watch
  *     2-2-2. If created, change the mode of VideoPlayer to VOD
@@ -55,6 +58,9 @@ const radioIconDisabledClass = "audio-only-svg-disabled";
  *   2-3. check for control group "player-controls__left-control-group"
  *     2-3-1. If created, check #3 for actions
  *     2-3-2. If removed, ?????
+ *   2-4. check for "video" element in the player
+ *     2-4-1. If created, check #6 for actions
+ *     2-4-2. If removed, ?????
  * 
  * 3. Control group "player-controls__left-control-group" checks for 
  *   3-1. subtree button[data-a-target='player-play-pause-button'] for video play/pause button
@@ -83,22 +89,35 @@ const radioIconDisabledClass = "audio-only-svg-disabled";
  */
 
 /**
- * Keep track of the latest usher request in the tab
+ * How to detect the channel of the stream being played?
+ * Getting channel name from URL has the folllowing issues
+ * (1) Streamer hosting another channel
+ * (2) Main page. Channel can change quickly in the carousel
+ * 
+ * Proposed solution:
+ * (1) Keep the last requested usher URL in the tab. Guess the channel from there
+ * (2) For "site_mini" state, store the channel name in video player.
+ *     In that case, it will be possible to resume playing in the right channel.
+ * (3) Disable the radio mode button in the main page
+ * 
  */
 
 /**
- * Add radio mode button in site_mini
+ * Add radio mode button in site_mini?
+ * Don't store the playstate in DOM: only store it in VideoPlayer class as the single source of truth
  */
 
 /**
- * "disabled" mode
- * 
- * video player data-a-player-type="clips-watch" in clips
- * 
- * div class "vod-seekbar-time-labels" in VOD
- * div class "seekbar-interaction-area" in VOD
- * 
+ * ESports page: video miniplayer keeps playing even when the site player in Esports page is also being played.
+ * Should the radio mode follow the same behavior?
  */
+
+/**
+ * Access token url has oauth code, which is undefined if the user is not logged in.
+ * Not sure how Twitch returns correct response for anonymous user yet.
+ * Calling the same access token URL from contentscript returns error.
+ */
+
 
 class VideoPlayer {
     playerId: string;
