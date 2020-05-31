@@ -35,9 +35,9 @@ const controlGroupProcessedClass = "control-group-processed";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
 const volumeSliderAttr = "input[data-a-target='player-volume-slider']";
 
-const radioButtonPausedClass = "audio-only-svg-paused";
-const radioButtonPlayingClass = "audio-only-svg-playing";
-const radioButtonDisabledClass = "audio-only-svg-disabled";
+const radioButtonPausedClass = "audio-only-button-paused";
+const radioButtonPlayingClass = "audio-only-button-playing";
+const radioButtonDisabledClass = "audio-only-button-disabled";
 
 const attrObserverConfig = { attributes: true, childList: false, subtree: false };
 const domObserverConfig = { attributes: false, childList: true, subtree: true };
@@ -126,7 +126,7 @@ const domObserverConfig = { attributes: false, childList: true, subtree: true };
 
 
 const enum PlayingState {
-    INACTIVE,
+    DISABLED,
     PAUSED,
     PLAYING,
 }
@@ -164,7 +164,7 @@ class ControlGroup {
     tryUpdatingPlayButtonElem(playButtonElem: HTMLButtonElement) {
         // play button cannot be found in the control group. Remove reference to the deleted node
         if(!playButtonElem) {
-            this.playButtonObserver.disconnect();
+            this.playButtonObserver?.disconnect();
             this.playButtonElem = null;
             return;
         }
@@ -178,7 +178,7 @@ class ControlGroup {
 
         // If exists, remove the existing one
         if(this.playButtonElem) {
-            this.playButtonObserver.disconnect();
+            this.playButtonObserver?.disconnect();
             this.playButtonElem = null;
         }
 
@@ -187,7 +187,7 @@ class ControlGroup {
         let playButtonCallback: MutationCallback = function(mutationList, observer) {
             const state = this.playButtonElem.getAttribute("data-a-player-state");
             if(state == "playing") {  // Video state from paused to playing
-                this.player.pause();  // Pause audio
+                this.player.pauseAll();  // Pause audio in all player instances
             }
         }
         this.playButtonObserver = new MutationObserver(playButtonCallback.bind(this));
@@ -197,7 +197,7 @@ class ControlGroup {
     tryUpdatingVolumesliderElem(volumeSliderElem: HTMLInputElement) {
         // volume slider cannot be found in the control group. Remove reference to the deleted node
         if(!volumeSliderElem) {
-            this.volumeObserver.disconnect();
+            this.volumeObserver?.disconnect();
             this.volumeSliderElem = null;
             return;
         }
@@ -211,15 +211,16 @@ class ControlGroup {
 
         // If exists, remove the existing one
         if(this.volumeSliderElem) {
-            this.volumeObserver.disconnect();
+            this.volumeObserver?.disconnect();
             this.volumeSliderElem = null;
         }
 
+        this.volumeSliderElem = volumeSliderElem;
         // MutationObserver to volumeSlider
         let volumeChangeCallback: MutationCallback = function(mutationList, observer) {
-            if(this.audioElem) {
+            if(this.player.audioElem) {
                 const volume = this.volumeSliderElem.value;
-                this.audioElem.volume = volume;
+                this.player.audioElem.volume = volume;
             }
         }
         this.volumeObserver = new MutationObserver(volumeChangeCallback.bind(this));
@@ -245,6 +246,19 @@ class ControlGroup {
     
         this.radioButton = buttonWrapperDom.getElementsByTagName("button")[0];
         this.radioButton.classList.add("radio-button-processed");
+        let stateClass = radioButtonDisabledClass;
+        switch(this.player.playingState) {
+            case PlayingState.DISABLED:
+                stateClass = radioButtonDisabledClass;
+                break;
+            case PlayingState.PAUSED:
+                stateClass = radioButtonPausedClass;
+                break;
+            case PlayingState.PLAYING:
+                stateClass = radioButtonPlayingClass;
+                break;
+        }
+        this.radioButton.classList.add(stateClass);
         this.radioButton.onclick = this.player.onRadioButtonClicked.bind(this.player);
         this.controlGroupElem.appendChild(buttonWrapperDom);
     }
@@ -275,7 +289,7 @@ class ControlGroup {
         classes?.remove(radioButtonDisabledClass);
     }
 
-    updateForInactive() {
+    updateForDisabled() {
         // Change the radio button icon
         const classes = this.radioButton?.classList;
         classes?.remove(radioButtonPausedClass);
@@ -284,9 +298,9 @@ class ControlGroup {
     }
 
     destroy() {
-        this.componentsObserver.disconnect();
-        this.playButtonObserver.disconnect();
-        this.volumeObserver.disconnect();
+        this.componentsObserver?.disconnect();
+        this.playButtonObserver?.disconnect();
+        this.volumeObserver?.disconnect();
     }
 }
 
@@ -402,7 +416,13 @@ class VideoPlayer {
             this.playerElem.removeChild(this.audioElem);
             this.audioElem = null;
         }
+        this.playingState = PlayingState.PAUSED;
         this.controlGroup?.updateForPause();
+    }
+
+    // Pause audio in all players
+    pauseAll() {
+        this.container.pauseExcept(null);
     }
 
     destroy() {  // What else to do here?
@@ -433,9 +453,10 @@ class VideoPlayer {
 
     onRadioButtonClicked() {
         switch(this.playingState) {
-            case PlayingState.INACTIVE:
+            case PlayingState.DISABLED:
                 break;
             case PlayingState.PAUSED:
+                console.debug("Radio button is clicked in paused state")
                 this.requestPlay();
                 break;
             case PlayingState.PLAYING:
@@ -497,7 +518,7 @@ export class VideoPlayerContainer {
     }
 
     destroy() {
-        this.observer.disconnect();
+        this.observer?.disconnect();
         for(let player of this.players) {
             player.destroy();
         }
