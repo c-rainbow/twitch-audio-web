@@ -30,6 +30,7 @@ const initialButtonDom = `
 
 const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
+const videoPlayerIdPrefix = videoPlayerProcessedClass + "-";
 const controlGroupClass = "player-controls__left-control-group";
 const controlGroupProcessedClass = "control-group-processed";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
@@ -491,13 +492,14 @@ export class VideoPlayerContainer {
 
     run() {
         // Find existing video player elements to create VideoPlayer objects
-        this.findVideoPlayerElems();
+        this.updateVideoPlayerList();
         // Detect future video player elements
-        this.observer = new MutationObserver(this.findVideoPlayerElems.bind(this));
-        this.observer.observe(document.body, domObserverConfig);
+        const mainElem = document.getElementsByTagName("main")[0];
+        this.observer = new MutationObserver(this.updateVideoPlayerList.bind(this));
+        this.observer.observe(mainElem, domObserverConfig);
     }
 
-    findVideoPlayerElems() {
+    updateVideoPlayerList() {
         // TODO: Is it better to iterate only the mutated divs?
         const playerElems = document.body.getElementsByClassName(videoPlayerClass);
         for(let playerElem of playerElems) {
@@ -507,6 +509,39 @@ export class VideoPlayerContainer {
                 this.createNewPlayer(playerElem as HTMLElement);
             }
         }
+
+        // No need to proceed if there are the same number of players in the list and in DOM.
+        if(playerElems.length == this.players.length) {
+            return;
+        }
+
+        this.destroyNonexistingPlayers(playerElems);
+    }
+
+    destroyNonexistingPlayers(playerElems: HTMLCollectionOf<Element>) {
+        // Remove video players not in DOM anymore
+        const allPlayerIdsInDom: string[] = [];
+        for(let playerElem of playerElems) {
+            const classes = playerElem.classList;
+            for(let className of classes) {
+                if(className.startsWith(videoPlayerIdPrefix)) {
+                    allPlayerIdsInDom.push(className);
+                }
+            }
+        }
+        console.debug("All playerIds in DOM: " + allPlayerIdsInDom);
+        const newlist = [];
+        for(let player of this.players) {
+            const playerId = player.playerId;
+            if(allPlayerIdsInDom.indexOf(playerId) != -1) {
+                newlist.push(player);
+            }
+            else {
+                console.debug(`Player ${playerId} is not in DOM anymore. Deleting..`);
+                player.destroy();
+            }
+        }
+        this.players = newlist;
     }
 
     createNewPlayer(playerElem: HTMLElement) {
@@ -514,7 +549,7 @@ export class VideoPlayerContainer {
             return;
         }
 
-        const newPlayerId = videoPlayerProcessedClass + "-" + this.nextId;
+        const newPlayerId = videoPlayerIdPrefix + this.nextId;
         this.nextId += 1;
         playerElem.classList.add(videoPlayerProcessedClass);
         playerElem.classList.add(newPlayerId);
@@ -529,7 +564,7 @@ export class VideoPlayerContainer {
         }
     }
 
-    destroy() {
+    destroy() {  // Will this function ever be used?
         this.observer?.disconnect();
         for(let player of this.players) {
             player.destroy();
