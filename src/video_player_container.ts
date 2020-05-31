@@ -1,6 +1,6 @@
 
-import { fetchUsherUrl, fetchAudioStreamUrl } from "./fetch";
-import { getChannelFromWebUrl, GetUrlsResponse } from "./url";
+import { tryFetchingPlaylist } from "./fetch";
+import { getChannelFromWebUrl, GetUrlsResponse, parseAudioOnlyUrl } from "./url";
 
 
 // TODO: Any better way than HTML as string?
@@ -183,15 +183,19 @@ class ControlGroup {
         }
 
         this.playButtonElem = playButtonElem;
-        // MutationObserver to playButtonElem
-        let playButtonCallback: MutationCallback = function(mutationList, observer) {
-            const state = this.playButtonElem.getAttribute("data-a-player-state");
-            if(state == "playing") {  // Video state from paused to playing
-                this.player.pauseAll();  // Pause audio in all player instances
-            }
-        }
-        this.playButtonObserver = new MutationObserver(playButtonCallback.bind(this));
+        // Pause audio in all players if a video starts to play.
+        // This is necesasry for a case when user browses to a non-channel page (e.g. main, esports)
+        // which automatically plays a video.
+        this.pauseAudioForVideo();
+        this.playButtonObserver = new MutationObserver(this.pauseAudioForVideo.bind(this));
         this.playButtonObserver.observe(this.playButtonElem, attrObserverConfig);
+    }
+
+    pauseAudioForVideo() {
+        const state = this.playButtonElem.getAttribute("data-a-player-state");
+        if(state == "playing") {  // Video state from paused to playing
+            this.player.pauseAll();  // Pause audio in all player instances
+        }
     }
 
     tryUpdatingVolumesliderElem(volumeSliderElem: HTMLInputElement) {
@@ -322,30 +326,8 @@ class VideoPlayer {
         this.playerElem = playerElem;
         this.playingState = PlayingState.PAUSED;
 
-        const attributeCallback: MutationCallback = function(mutations, observer) {
-            for(let mutation of mutations) {
-                if(mutation.attributeName == "data-a-player-type") {
-                    const playerType = this.playerElem.getAttribute("data-a-player-type");
-                    switch(playerType) {
-                        case "site":
-                            break;  // state change function
-                        case "site_mini":
-                            break;
-                        case "clips-watch":
-                            break;
-                    }
-                    return;
-                }
-            }
-        }
-        this.attributeObserver = new MutationObserver(attributeCallback.bind(this));
-        this.attributeObserver.observe(this.playerElem, attrObserverConfig);
-
         this.tryUpdatingControlGroup();
-        const controlGroupCallback: MutationCallback = function(mutations, observer) {
-            this.tryUpdatingControlGroup();
-        }
-        this.controlGroupObserver = new MutationObserver(controlGroupCallback.bind(this));
+        this.controlGroupObserver = new MutationObserver(this.tryUpdatingControlGroup.bind(this));
         this.controlGroupObserver.observe(this.playerElem, domObserverConfig);
     }
 
@@ -434,18 +416,20 @@ class VideoPlayer {
         const channel = getChannelFromWebUrl();
         const responseCallback = async function(response: GetUrlsResponse) {
             console.debug("response for get_audio_url received: " + JSON.stringify(response));
-            if(!response?.channel) {
+            if(!response?.webUrl?.channel) {
                 return;
             }
 
-            let usherUrl = response.usherUrl;
-            if(!usherUrl) {
-                usherUrl = await fetchUsherUrl(response.channel, response.accessTokenUrl);
+            let playlist = await tryFetchingPlaylist(response.webUrl);
+            if(!playlist) {
+                playlist = await tryFetchingPlaylist(response.lastRequested);
             }
-            
-            const audioStreamUrl = await fetchAudioStreamUrl(usherUrl);
-            this.container.pauseExcept(this.playerId);
-            this.play(audioStreamUrl);
+        
+            const audioStreamUrl = parseAudioOnlyUrl(playlist);
+            if(audioStreamUrl) {
+                this.container.pauseExcept(this.playerId);
+                this.play(audioStreamUrl);
+            }
         }
         chrome.runtime.sendMessage(
             {message: "get_audio_url", channel: channel}, responseCallback.bind(this)); 
@@ -456,7 +440,6 @@ class VideoPlayer {
             case PlayingState.DISABLED:
                 break;
             case PlayingState.PAUSED:
-                console.debug("Radio button is clicked in paused state")
                 this.requestPlay();
                 break;
             case PlayingState.PLAYING:

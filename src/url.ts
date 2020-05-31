@@ -89,6 +89,12 @@ export function buildUsherUrl(channel: string, token: string, sig: string) : Ush
 // Interface to communicate between background and contentscript
 // to request/respond access token URL and usher URL for a channel.
 export interface GetUrlsResponse {
+    webUrl: UrlGroup;
+    lastRequested: UrlGroup;
+}
+
+
+export interface UrlGroup {
     channel: string;
     accessTokenUrl: string;
     usherUrl: string;
@@ -108,6 +114,17 @@ export class UsherUrl {
         this.channel = this.getChannel();        
         this.expiresAt = this.getExpiresAt();
         this.setQueryString("allow_audio_only", "true");
+    }
+
+    getUnexpiredUrl() : string {
+        const now = new Date();
+        const secondsSinceEpoch = Math.round(now.getTime() / 1000);
+        // 60 seconds buffer before token expiration
+        if(secondsSinceEpoch + 60 < this.expiresAt) {
+            return this.getUrl();
+        }
+        console.debug(`Cached URL for ${this.channel} is expired`);
+        return null;
     }
 
     getUrl() : string {
