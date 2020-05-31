@@ -333,6 +333,8 @@ class VideoPlayer {
     }
 
     tryUpdatingControlGroup() {
+        this.updateControlsPerLiveness();
+
         // Check if the control group DOM is ready
         const controlGroupElem = this.playerElem.getElementsByClassName(controlGroupClass)?.[0];
         if(!controlGroupElem) {  // control group cannot be found in DOM
@@ -442,6 +444,24 @@ class VideoPlayer {
         }
         chrome.runtime.sendMessage(
             {message: "get_audio_url", channel: channel}, responseCallback.bind(this)); 
+    }
+
+    updateControlsPerLiveness() {
+        // If watching a live stream, enable the control group.
+        // If watching VOD of clip, disable the control group.
+        // For now, the logic for checking live/recorded video is existence of time seekbar.
+        const seekbar = this.playerElem.getElementsByClassName("seekbar-interaction-area")?.[0];
+
+        // When seekbar disappeared and the button is still disabled.
+        if(!seekbar && this.playingState == PlayingState.DISABLED) {
+            this.playingState = PlayingState.PAUSED;
+            this.controlGroup?.updateForPause();
+        }
+        // When seekbar appeared and the radio button is not disabled yet.
+        else if(seekbar && this.playingState != PlayingState.DISABLED) {
+            this.playingState = PlayingState.DISABLED;
+            this.controlGroup?.updateForDisabled();
+        }
     }
 
     onRadioButtonClicked() {
