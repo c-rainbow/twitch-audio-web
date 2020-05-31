@@ -194,13 +194,13 @@ class ControlGroup {
 
     pauseAudioForVideo() {
         const state = this.playButtonElem.getAttribute("data-a-player-state");
-        if(state == "playing") {  // Video state from paused to playing
+        if(state === "playing") {  // Video state from paused to playing
             this.player.pauseAll();  // Pause audio in all player instances
         }
     }
 
     adjustVolume() {
-        if(this.player.audioElem) {
+        if(this.player.audioElem && this.volumeSliderElem) {
             const volume = this.volumeSliderElem.value;
             this.player.audioElem.volume = parseFloat(volume);
         }
@@ -234,7 +234,7 @@ class ControlGroup {
     }
 
     tryUpdatingRadioButton() {
-        // Don't proceed if both playButtonElem and volumeSliderElem are available
+        // Don't proceed unless both playButtonElem and volumeSliderElem are available
         if(!this.playButtonElem || !this.volumeSliderElem) {
             return;
         }
@@ -246,7 +246,6 @@ class ControlGroup {
         }
 
         // TODO: Use webpack html loader
-        // TODO: Disable the button in clip and (also VOD?)
         const buttonWrapperDom = document.createElement("div")
         buttonWrapperDom.innerHTML = initialButtonDom;
     
@@ -275,7 +274,7 @@ class ControlGroup {
 
         // Stop the video if playing
         const videoState = this.playButtonElem?.getAttribute("data-a-player-state");
-        if(videoState == "playing") {
+        if(videoState === "playing") {
             // Is there a better way to pause video than this "click" hack?
             this.playButtonElem.click();
         }
@@ -368,7 +367,7 @@ class VideoPlayer {
 
         // Create a separate <video> element to play audio.
         // <audio> can be also used by hls.js, but Typescript forces this to be HTMLVideoElement.
-        this.audioElem = document.createElement("video");
+        this.audioElem = <HTMLVideoElement>document.createElement("audio");
         this.audioElem.style.display = "none";
         this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
@@ -454,7 +453,7 @@ class VideoPlayer {
         const seekbar = this.playerElem.getElementsByClassName("seekbar-interaction-area")?.[0];
 
         // When seekbar disappeared and the button is still disabled.
-        if(!seekbar && this.playingState == PlayingState.DISABLED) {
+        if(!seekbar && this.playingState === PlayingState.DISABLED) {
             this.playingState = PlayingState.PAUSED;
             this.controlGroup?.updateForPause();
         }
@@ -511,7 +510,7 @@ export class VideoPlayerContainer {
         }
 
         // No need to proceed if there are the same number of players in the list and in DOM.
-        if(playerElems.length == this.players.length) {
+        if(playerElems.length === this.players.length) {
             return;
         }
 

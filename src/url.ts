@@ -58,13 +58,13 @@ export function getChannelFromUsherUrl(usherUrl: string) : string {
 export function getNameBetweenStrings(
         url: string, startStr: string, endStr: string, endOptional: boolean = false) : string {
     let startIndex = url.indexOf(startStr);
-    if(startIndex == -1) {
+    if(startIndex === -1) {
         return null;
     }
     startIndex += startStr.length;
 
     let endIndex = url.indexOf(endStr, startIndex + 1);
-    if(endIndex == -1) {
+    if(endIndex === -1) {
         if(endOptional) endIndex = url.length;
         else return null;
     }
@@ -133,7 +133,7 @@ export class UsherUrl {
 
     getPath(url: string) : string {
         const endIndex = url.indexOf("?");
-        if(endIndex == -1) {
+        if(endIndex === -1) {
             return url;
         }
         return url.substring(0, endIndex);
