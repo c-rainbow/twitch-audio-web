@@ -136,7 +136,7 @@ class ControlGroup {
     controlGroupElem: HTMLElement;
     player: VideoPlayer;
     playButtonElem: HTMLElement;
-    volumeSliderElem: HTMLElement;
+    volumeSliderElem: HTMLInputElement;
     radioButton: HTMLElement;
     componentsObserver: MutationObserver;
     playButtonObserver: MutationObserver;
@@ -198,6 +198,13 @@ class ControlGroup {
         }
     }
 
+    adjustVolume() {
+        if(this.player.audioElem) {
+            const volume = this.volumeSliderElem.value;
+            this.player.audioElem.volume = parseFloat(volume);
+        }
+    }
+
     tryUpdatingVolumesliderElem(volumeSliderElem: HTMLInputElement) {
         // volume slider cannot be found in the control group. Remove reference to the deleted node
         if(!volumeSliderElem) {
@@ -221,13 +228,7 @@ class ControlGroup {
 
         this.volumeSliderElem = volumeSliderElem;
         // MutationObserver to volumeSlider
-        let volumeChangeCallback: MutationCallback = function(mutationList, observer) {
-            if(this.player.audioElem) {
-                const volume = this.volumeSliderElem.value;
-                this.player.audioElem.volume = volume;
-            }
-        }
-        this.volumeObserver = new MutationObserver(volumeChangeCallback.bind(this));
+        this.volumeObserver = new MutationObserver(this.adjustVolume.bind(this));
         this.volumeObserver.observe(this.volumeSliderElem, attrObserverConfig);
     }
 
@@ -366,6 +367,7 @@ class VideoPlayer {
         // <audio> can be also used by hls.js, but Typescript forces this to be HTMLVideoElement.
         this.audioElem = document.createElement("video");
         this.audioElem.style.display = "none";
+        this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
             //debug: true,
@@ -388,7 +390,14 @@ class VideoPlayer {
 
     pause() {
         if(this.hls) {
-            this.audioElem.pause();
+            try {
+                this.audioElem.pause();
+            }
+            catch(err) {
+                // "DOMException: The play() request was interrupted by a call to pause()"
+                // is thrown when user pauses the audio too quickly after playing.
+                // No action is needed. The audio will be paused correctly anyway.
+            }
             this.hls.stopLoad();
             this.hls.detachMedia();
             this.hls.destroy();

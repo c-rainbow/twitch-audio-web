@@ -30,7 +30,7 @@ export function parseAudioOnlyUrl(content: string) : string {
 
 export function getChannelFromWebUrl(weburl?: string) : string {
     // Channel name may not be available from the main page URL
-    const url = weburl || location.href;
+    const url = weburl ?? location.href;
     const channel = getNameBetweenStrings(url, twitchDomain, "/", true);
     console.log("Channel name " + channel + ", from URL: " + url)
 
