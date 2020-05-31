@@ -391,6 +391,9 @@ class VideoPlayer {
     }
 
     pause() {
+        if(this.playingState === PlayingState.PAUSED) {
+            return;
+        }
         if(this.hls) {
             try {
                 this.audioElem.pause();
@@ -418,8 +421,19 @@ class VideoPlayer {
         this.container.pauseExcept(null);
     }
 
+    disable() {
+        if(this.playingState === PlayingState.DISABLED) {
+            return;
+        }
+        if(this.playingState === PlayingState.PLAYING) {
+            this.pause();
+        }
+        this.playingState = PlayingState.DISABLED;
+        this.controlGroup?.updateForDisabled();
+    }
+
     destroy() {  // What else to do here?
-        this.pause();
+        this.disable();
         this.controlGroup?.destroy();
     }
 
@@ -428,12 +442,16 @@ class VideoPlayer {
         const responseCallback = async function(response: GetUrlsResponse) {
             console.debug("response for get_audio_url received: " + JSON.stringify(response));
             if(!response?.webUrl?.channel) {
+                // Currently in a non-channel page. Disable 
+                this.disable();
                 return;
             }
 
             let playlist = await tryFetchingPlaylist(response.webUrl);
             if(!playlist) {
-                playlist = await tryFetchingPlaylist(response.lastRequested);
+                // Offline or hosting another channel. Disable 
+                this.disable();
+                return;
             }
         
             const audioStreamUrl = parseAudioOnlyUrl(playlist);
@@ -453,14 +471,12 @@ class VideoPlayer {
         const seekbar = this.playerElem.getElementsByClassName("seekbar-interaction-area")?.[0];
 
         // When seekbar disappeared and the button is still disabled.
-        if(!seekbar && this.playingState === PlayingState.DISABLED) {
-            this.playingState = PlayingState.PAUSED;
-            this.controlGroup?.updateForPause();
+        /*if(!seekbar && this.playingState === PlayingState.DISABLED) {
+            this.pause();
         }
         // When seekbar appeared and the radio button is not disabled yet.
-        else if(seekbar && this.playingState != PlayingState.DISABLED) {
-            this.playingState = PlayingState.DISABLED;
-            this.controlGroup?.updateForDisabled();
+        else*/ if(seekbar && this.playingState != PlayingState.DISABLED) {
+            this.disable();
         }
     }
 
