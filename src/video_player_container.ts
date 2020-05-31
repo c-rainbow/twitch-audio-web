@@ -8,13 +8,12 @@ const initialButtonDom = `
 <div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
     <button class="audio-only-button tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
             data-a-target="audio-only-button"
-            data-a-player-state="paused"
             aria-label="Audio only">
         <div class="tw-align-items-center tw-flex tw-flex-grow-0">
             <span class="tw-button-icon__icon">
                 <div class="button-icon-div" style="width: 2rem; height: 2rem;">
                     <!-- Google Material Design Radio Icon. Apache License v2.0 -->
-                    <svg class="tw-icon__svg audio-only-svg-paused" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                    <svg class="tw-icon__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
                         <path d="M0 0h24v24H0z" fill="none"/>
                         <path d="M3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.89 2 2 2h16c1.11 0 2-.9 2-2V8c0-1.11-.89-2-2-2H8.3l8.26-3.34L15.88 1 3.24 6.15zM7 20c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-8h-2v-2h-2v2H4V8h16v4z"/>
                     </svg>
@@ -23,7 +22,7 @@ const initialButtonDom = `
         </div>
     </button>
     <div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip">
-        Audio only
+        Radio mode
     </div>
 </div>
 `;
@@ -32,12 +31,16 @@ const initialButtonDom = `
 const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
 const controlGroupClass = "player-controls__left-control-group";
+const controlGroupProcessedClass = "control-group-processed";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
-const volumnSliderAttr = "input[data-a-target='player-volume-slider']";
+const volumeSliderAttr = "input[data-a-target='player-volume-slider']";
 
-const radioIconPausedClass = "audio-only-svg-paused";
-const radioIconPlayingClass = "audio-only-svg-playing";
-const radioIconDisabledClass = "audio-only-svg-disabled";
+const radioButtonPausedClass = "audio-only-svg-paused";
+const radioButtonPlayingClass = "audio-only-svg-playing";
+const radioButtonDisabledClass = "audio-only-svg-disabled";
+
+const attrObserverConfig = { attributes: true, childList: false, subtree: false };
+const domObserverConfig = { attributes: false, childList: true, subtree: true };
 
 
 /**
@@ -116,64 +119,245 @@ const radioIconDisabledClass = "audio-only-svg-disabled";
  * Access token url has oauth code, which is undefined if the user is not logged in.
  * Not sure how Twitch returns correct response for anonymous user yet.
  * Calling the same access token URL from contentscript returns error.
+ * 
+ * Proposed solution:
+ * (1) Disable the button when user is not logged in.
  */
+
+
+const enum PlayingState {
+    INACTIVE,
+    PAUSED,
+    PLAYING,
+}
+
+
+class ControlGroup {
+    controlGroupElem: HTMLElement;
+    player: VideoPlayer;
+    playButtonElem: HTMLElement;
+    volumeSliderElem: HTMLElement;
+    radioButton: HTMLElement;
+    componentsObserver: MutationObserver;
+    playButtonObserver: MutationObserver;
+    volumeObserver: MutationObserver; 
+
+    constructor(player: VideoPlayer, controlGroupElem: HTMLElement) {
+        this.player = player;
+        this.controlGroupElem = controlGroupElem;
+        
+        this.tryUpdatingComponents();
+        this.componentsObserver = new MutationObserver(this.tryUpdatingComponents.bind(this));
+        this.componentsObserver.observe(this.controlGroupElem, domObserverConfig);
+    }
+
+    tryUpdatingComponents() {
+        // Check for new Play/Audio button and volume slider 
+        const playButtonElem: HTMLButtonElement = this.controlGroupElem.querySelector(playButtonAttr);
+        this.tryUpdatingPlayButtonElem(playButtonElem);
+        const volumeSliderElem: HTMLInputElement = this.controlGroupElem.querySelector(volumeSliderAttr);
+        this.tryUpdatingVolumesliderElem(volumeSliderElem);
+        // Add the radio button if not exists
+        this.tryUpdatingRadioButton();
+    }
+
+    tryUpdatingPlayButtonElem(playButtonElem: HTMLButtonElement) {
+        // play button cannot be found in the control group. Remove reference to the deleted node
+        if(!playButtonElem) {
+            this.playButtonObserver.disconnect();
+            this.playButtonElem = null;
+            return;
+        }
+
+        const classes = playButtonElem.classList;
+        // This element was already added to this.playButtonElem. Ignore.
+        if(classes.contains("play-pause-button-processed")) {
+            return;
+        }
+        classes.add("play-pause-button-processed");
+
+        // If exists, remove the existing one
+        if(this.playButtonElem) {
+            this.playButtonObserver.disconnect();
+            this.playButtonElem = null;
+        }
+
+        this.playButtonElem = playButtonElem;
+        // MutationObserver to playButtonElem
+        let playButtonCallback: MutationCallback = function(mutationList, observer) {
+            const state = this.playButtonElem.getAttribute("data-a-player-state");
+            if(state == "playing") {  // Video state from paused to playing
+                this.player.pause();  // Pause audio
+            }
+        }
+        this.playButtonObserver = new MutationObserver(playButtonCallback.bind(this));
+        this.playButtonObserver.observe(this.playButtonElem, attrObserverConfig);
+    }
+
+    tryUpdatingVolumesliderElem(volumeSliderElem: HTMLInputElement) {
+        // volume slider cannot be found in the control group. Remove reference to the deleted node
+        if(!volumeSliderElem) {
+            this.volumeObserver.disconnect();
+            this.volumeSliderElem = null;
+            return;
+        }
+
+        const classes = volumeSliderElem.classList;
+        // This element was already added to this.volumeSliderElem. Ignore.
+        if(classes.contains("volume-slider-processed")) {
+            return;
+        }
+        classes.add("volume-slider-processed");
+
+        // If exists, remove the existing one
+        if(this.volumeSliderElem) {
+            this.volumeObserver.disconnect();
+            this.volumeSliderElem = null;
+        }
+
+        // MutationObserver to volumeSlider
+        let volumeChangeCallback: MutationCallback = function(mutationList, observer) {
+            if(this.audioElem) {
+                const volume = this.volumeSliderElem.value;
+                this.audioElem.volume = volume;
+            }
+        }
+        this.volumeObserver = new MutationObserver(volumeChangeCallback.bind(this));
+        this.volumeObserver.observe(this.volumeSliderElem, attrObserverConfig);
+    }
+
+    tryUpdatingRadioButton() {
+        // Don't proceed if both playButtonElem and volumeSliderElem are available
+        if(!this.playButtonElem || !this.volumeSliderElem) {
+            return;
+        }
+
+        // If the button was already created, do nothing
+        const classes = this.radioButton?.classList;
+        if(classes?.contains("radio-button-processed")) {
+            return;
+        }
+
+        // TODO: Use webpack html loader
+        // TODO: Disable the button in clip and (also VOD?)
+        const buttonWrapperDom = document.createElement("div")
+        buttonWrapperDom.innerHTML = initialButtonDom;
+    
+        this.radioButton = buttonWrapperDom.getElementsByTagName("button")[0];
+        this.radioButton.classList.add("radio-button-processed");
+        this.radioButton.onclick = this.player.onRadioButtonClicked.bind(this.player);
+        this.controlGroupElem.appendChild(buttonWrapperDom);
+    }
+
+    updateForPlay() {
+        // NOTE: There is 1~3 seconds of delay between audio-only button click and sound being played.
+        // It's better to show some intermediate state (icon change, mouse cursor change, etc) in the meanwhile
+
+        // Stop the video if playing
+        const videoState = this.playButtonElem?.getAttribute("data-a-player-state");
+        if(videoState == "playing") {
+            // Is there a better way to pause video than this "click" hack?
+            this.playButtonElem.click();
+        }
+        
+        // Change the radio button icon
+        const classes = this.radioButton?.classList;
+        classes?.remove(radioButtonPausedClass);
+        classes?.add(radioButtonPlayingClass);
+        classes?.remove(radioButtonDisabledClass);
+    }
+
+    updateForPause() {
+        // Change the radio button icon
+        const classes = this.radioButton?.classList;
+        classes?.add(radioButtonPausedClass);
+        classes?.remove(radioButtonPlayingClass);
+        classes?.remove(radioButtonDisabledClass);
+    }
+
+    updateForInactive() {
+        // Change the radio button icon
+        const classes = this.radioButton?.classList;
+        classes?.remove(radioButtonPausedClass);
+        classes?.remove(radioButtonPlayingClass);
+        classes?.add(radioButtonDisabledClass);
+    }
+
+    destroy() {
+        this.componentsObserver.disconnect();
+        this.playButtonObserver.disconnect();
+        this.volumeObserver.disconnect();
+    }
+}
 
 
 class VideoPlayer {
     playerId: string;
     container: VideoPlayerContainer;
     playerElem: HTMLElement;
-    controlGroupElem: HTMLElement;
-    playButtonElem: HTMLElement;
-    volumeSliderElem: HTMLElement;
-    audioOnlyButton: HTMLElement;
+    playingState: PlayingState;
+    attributeObserver: MutationObserver;
+    controlGroup: ControlGroup;
+    controlGroupObserver: MutationObserver;
     hls: Hls;
     audioElem: HTMLVideoElement;
-    playButtonObserver: MutationObserver;
-    volumeObserver: MutationObserver;
 
-    constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement,
-            controlGroupElem: HTMLElement, playButtonElem: HTMLElement, volumeSliderElem: HTMLElement) {
+    constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement) {
         this.playerId = playerId;
         this.container = container;
         this.playerElem = playerElem;
-        this.controlGroupElem = controlGroupElem;
-        this.playButtonElem = playButtonElem;
-        this.volumeSliderElem = volumeSliderElem;
+        this.playingState = PlayingState.PAUSED;
+
+        const attributeCallback: MutationCallback = function(mutations, observer) {
+            for(let mutation of mutations) {
+                if(mutation.attributeName == "data-a-player-type") {
+                    const playerType = this.playerElem.getAttribute("data-a-player-type");
+                    switch(playerType) {
+                        case "site":
+                            break;  // state change function
+                        case "site_mini":
+                            break;
+                        case "clips-watch":
+                            break;
+                    }
+                    return;
+                }
+            }
+        }
+        this.attributeObserver = new MutationObserver(attributeCallback.bind(this));
+        this.attributeObserver.observe(this.playerElem, attrObserverConfig);
+
+        this.tryUpdatingControlGroup();
+        const controlGroupCallback: MutationCallback = function(mutations, observer) {
+            this.tryUpdatingControlGroup();
+        }
+        this.controlGroupObserver = new MutationObserver(controlGroupCallback.bind(this));
+        this.controlGroupObserver.observe(this.playerElem, domObserverConfig);
     }
 
-    run() {
-        this.populateComponents();
-    }
-
-    populateComponents() {
-        const audioOnlyButton = this.appendAudioOnlyButton();
-        this.controlGroupElem.appendChild(audioOnlyButton);
-
-        const buttonConfig = { attributes: true, childList: false, subtree: false };
-            
-        // MutationObserver to playButtonElem
-        let playButtonCallback: MutationCallback = function(mutationList, observer) {
-            const state = this.playButtonElem.getAttribute("data-a-player-state");
-            if(state == "playing") {  // From paused to playing
-                this.pause();  // Pause audio
-            }                
+    tryUpdatingControlGroup() {
+        // Check if the control group DOM is ready
+        const controlGroupElem = this.playerElem.getElementsByClassName(controlGroupClass)?.[0];
+        if(!controlGroupElem) {  // control group cannot be found in DOM
+            this.controlGroup?.destroy();  // destroy reference to the removed DOM
+            this.controlGroup = null;
+            return;
         }
-        this.playButtonObserver = new MutationObserver(playButtonCallback.bind(this));
-        this.playButtonObserver.observe(this.playButtonElem, buttonConfig);
-        
-        // MutationObserver to volumeSlider
-        let volumeChangeCallback: MutationCallback = function(mutationList, observer) {
-            const volume = this.volumeSliderElem.value;
-            this.audioElem.volume = volume;
+
+        // Add processed class name to prevent duplicate processing of this element
+        const classes = controlGroupElem.classList;
+        if(classes.contains(controlGroupProcessedClass)) {
+            return;
         }
-        this.volumeObserver = new MutationObserver(volumeChangeCallback.bind(this));
-        this.volumeObserver.observe(this.volumeSliderElem, buttonConfig);
+        classes.add(controlGroupProcessedClass);
+
+        this.controlGroup?.destroy();
+        this.controlGroup = new ControlGroup(this, controlGroupElem as HTMLElement);
     }
 
     play(mediaUrl: string) {
         if(!mediaUrl) {
-            console.log("No mediaUrl is found to play")
+            console.debug("No mediaUrl is found to play")
             return;
         }
 
@@ -198,28 +382,12 @@ class VideoPlayer {
         // TODO: Is this safe to play right away after attaching the media?
         // The main example at hls.js website tells to use MANIFEST_PARSED event,
         // but for some reason the event is not triggered with typescript+webpack.
-        this.audioElem.play().then(function() {
+        const audioPlayCallback = function() {
             console.log("Play started");
-        });
-
-        // NOTE: There is 1~3 seconds of delay between audio-only button click and sound being played.
-        // It's better to show some intermediate state (icon change, mouse cursor change, etc) in the meanwhile
-
-        // Stop the video if playing
-        const videoState = this.playButtonElem.getAttribute("data-a-player-state");
-        if(videoState == "playing") {
-            // Is there a better way to pause video than this "click" hack?
-            this.playButtonElem.click();
         }
-
-        // Change the audio-only button icon
-        this.audioOnlyButton.setAttribute("data-a-player-state", "playing");
-        const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
-        const classes = svgDom.classList;
-        if(classes.contains(radioIconPausedClass)) {
-            classes.remove(radioIconPausedClass);
-            classes.add(radioIconPlayingClass);
-        }
+        this.audioElem.play().then(audioPlayCallback.bind(this));
+        this.playingState = PlayingState.PLAYING;
+        this.controlGroup?.updateForPlay();
     }
 
     pause() {
@@ -231,57 +399,22 @@ class VideoPlayer {
             // There seems to be a bug that the HLS object gets stuck after multiple plays and pauses
             // if it is re-used for the next play. Need to destroy the object and re-create it.
             this.hls = null;
+            this.playerElem.removeChild(this.audioElem);
             this.audioElem = null;
         }
-
-        // Change the audio-only button icon
-        this.audioOnlyButton.setAttribute("data-a-player-state", "paused");
-        const svgDom = this.audioOnlyButton.getElementsByTagName("svg")[0];
-        const classes = svgDom.classList;
-        if(classes.contains(radioIconPlayingClass)) {
-            classes.remove(radioIconPlayingClass);
-            classes.add(radioIconPausedClass);
-        }
+        this.controlGroup?.updateForPause();
     }
 
     destroy() {  // What else to do here?
         this.pause();
-        this.playButtonObserver.disconnect();
-        this.volumeObserver.disconnect();
-    }
-
-    appendAudioOnlyButton() {
-        // TODO: Use webpack html loader
-        // TODO: Disable the button in clip and (also VOD?)
-        const buttonWrapperDom = document.createElement("div")
-        buttonWrapperDom.innerHTML = initialButtonDom;
-    
-        this.audioOnlyButton = buttonWrapperDom.getElementsByTagName("button")[0];
-        const onclickCallback = function() {
-            const state = this.audioOnlyButton.getAttribute("data-a-player-state");
-            if(state === "disabled") {
-                return;
-            }
-            else if(state === "paused") {
-                this.requestPlay();
-            }
-            else if(state === "playing"){
-                this.pause();
-            }
-            else {
-
-            }
-        }
-        this.audioOnlyButton.onclick = onclickCallback.bind(this);
-        this.controlGroupElem.appendChild(buttonWrapperDom);
-        return buttonWrapperDom;
+        this.controlGroup?.destroy();
     }
 
     requestPlay() {
         const channel = getChannelFromWebUrl();
         const responseCallback = async function(response: GetUrlsResponse) {
             console.debug("response for get_audio_url received: " + JSON.stringify(response));
-            if(!response || !response.channel) {
+            if(!response?.channel) {
                 return;
             }
 
@@ -297,10 +430,23 @@ class VideoPlayer {
         chrome.runtime.sendMessage(
             {message: "get_audio_url", channel: channel}, responseCallback.bind(this)); 
     }
+
+    onRadioButtonClicked() {
+        switch(this.playingState) {
+            case PlayingState.INACTIVE:
+                break;
+            case PlayingState.PAUSED:
+                this.requestPlay();
+                break;
+            case PlayingState.PLAYING:
+                this.pause();
+                break;
+        }
+    }
 }
 
 
-export default class VideoPlayerContainer {
+export class VideoPlayerContainer {
     players: VideoPlayer[];
     nextId: number;
     observer: MutationObserver;
@@ -313,11 +459,9 @@ export default class VideoPlayerContainer {
     run() {
         // Find existing video player elements to create VideoPlayer objects
         this.findVideoPlayerElems();
-
         // Detect future video player elements
-        const config = { attributes: false, childList: true, subtree: true };
         this.observer = new MutationObserver(this.findVideoPlayerElems.bind(this));
-        this.observer.observe(document.body, config);
+        this.observer.observe(document.body, domObserverConfig);
     }
 
     findVideoPlayerElems() {
@@ -327,40 +471,23 @@ export default class VideoPlayerContainer {
             // If the div is not already processed
             if(!playerElem.classList.contains(videoPlayerProcessedClass)) {
                 console.debug("New video player detected");
-                this.tryCreatingNewPlayer(playerElem as HTMLElement);
+                this.createNewPlayer(playerElem as HTMLElement);
             }
         }
     }
 
-    tryCreatingNewPlayer(playerElem: HTMLElement) {
+    createNewPlayer(playerElem: HTMLElement) {
         if(playerElem.classList.contains(videoPlayerProcessedClass)) {
             return;
         }
 
-        // Check if all required DOMs are ready
-        const controlGroupElems = playerElem.getElementsByClassName(controlGroupClass);
-        if(!controlGroupElems) {
-            return;
-        }
-
-        const controlGroupElem = controlGroupElems[0] as HTMLElement
-        const playButtonElem = controlGroupElem.querySelector(playButtonAttr);
-        const volumeSliderElem = controlGroupElem.querySelector(volumnSliderAttr);
-        if(!playButtonElem || !volumeSliderElem) {
-            return;
-        }
-
-        // All required DOMs are ready.
         const newPlayerId = videoPlayerProcessedClass + "-" + this.nextId;
         this.nextId += 1;
         playerElem.classList.add(videoPlayerProcessedClass);
         playerElem.classList.add(newPlayerId);
 
-        const player = new VideoPlayer(
-            newPlayerId, this, playerElem, controlGroupElem, playButtonElem as HTMLElement,
-            volumeSliderElem as HTMLElement);
+        const player = new VideoPlayer(newPlayerId, this, playerElem);
         this.players.push(player);
-        player.run();
     }
 
     pauseExcept(playerId: string) {
