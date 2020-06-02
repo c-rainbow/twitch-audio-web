@@ -30,7 +30,7 @@ export function parseAudioOnlyUrl(content: string) : string {
 
 export function getChannelFromWebUrl(weburl?: string) : string {
     // Channel name may not be available from the main page URL
-    const url = weburl || location.href;
+    const url = weburl ?? location.href;
     const channel = getNameBetweenStrings(url, twitchDomain, "/", true);
     console.log("Channel name " + channel + ", from URL: " + url)
 
@@ -58,13 +58,13 @@ export function getChannelFromUsherUrl(usherUrl: string) : string {
 export function getNameBetweenStrings(
         url: string, startStr: string, endStr: string, endOptional: boolean = false) : string {
     let startIndex = url.indexOf(startStr);
-    if(startIndex == -1) {
+    if(startIndex === -1) {
         return null;
     }
     startIndex += startStr.length;
 
     let endIndex = url.indexOf(endStr, startIndex + 1);
-    if(endIndex == -1) {
+    if(endIndex === -1) {
         if(endOptional) endIndex = url.length;
         else return null;
     }
@@ -89,6 +89,12 @@ export function buildUsherUrl(channel: string, token: string, sig: string) : Ush
 // Interface to communicate between background and contentscript
 // to request/respond access token URL and usher URL for a channel.
 export interface GetUrlsResponse {
+    webUrl: UrlGroup;
+    lastRequested: UrlGroup;
+}
+
+
+export interface UrlGroup {
     channel: string;
     accessTokenUrl: string;
     usherUrl: string;
@@ -110,13 +116,24 @@ export class UsherUrl {
         this.setQueryString("allow_audio_only", "true");
     }
 
+    getUnexpiredUrl() : string {
+        const now = new Date();
+        const secondsSinceEpoch = Math.round(now.getTime() / 1000);
+        // 60 seconds buffer before token expiration
+        if(secondsSinceEpoch + 60 < this.expiresAt) {
+            return this.getUrl();
+        }
+        console.debug(`Cached URL for ${this.channel} is expired`);
+        return null;
+    }
+
     getUrl() : string {
         return this.urlObject.toString();
     }
 
     getPath(url: string) : string {
         const endIndex = url.indexOf("?");
-        if(endIndex == -1) {
+        if(endIndex === -1) {
             return url;
         }
         return url.substring(0, endIndex);

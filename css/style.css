@@ -4,10 +4,14 @@
     display:none;
 }
 
-.audio-only-svg-paused {
+.audio-only-button-paused svg {
     fill: white !important;
 }
 
-.audio-only-svg-playing {
+.audio-only-button-playing svg {
     fill: orange !important;
+}
+
+.audio-only-button-disabled svg {
+    fill: gray !important;
 }
