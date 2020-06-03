@@ -1,8 +1,14 @@
 {
     "name": "Twitch Radio Mode",
     "version": "0.0.3",
-    "description": "Enables Twitch radio mode in web",
+    "description": "Runs Twitch radio mode in web browser",
     "manifest_version": 2,
+    "icons": {
+        "16": "icons/icon_16w.png",
+        "32": "icons/icon_32w.png",
+        "48": "icons/icon_48w.png",
+        "128": "icons/icon_128w.png"
+    },
     "permissions": [
         "webRequest",
         "*://*.twitch.tv/*",
@@ -20,4 +26,4 @@
             "js": ["./include/hls.js/hls.js", "./dist/contentscript.js"]
         }
     ]
-  }
+}
