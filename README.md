@@ -8,17 +8,13 @@ This extension for Google Chrome browser lets users play the stream in radio mod
 
 After installing the extension, go to a Twitch channel webpage. You will see a radio icon next to the volume slider in the video player area.
 
-<------Add a screenshot
+![Radio mode button](https://raw.githubusercontent.com/c-rainbow/twitch-audio-web/master/public/images/radiobutton.png)
 
 Clicking the icon will start playing the audio_only stream, and the icon becomes yellow.
 
-<------Add a screenshot
+![Radio mode on](https://raw.githubusercontent.com/c-rainbow/twitch-audio-web/master/public/images/radiomode.png)
 
-If you want to pause, just click the radio icon one more time.
-
-<------Add a screenshot
-
-The audio will automatically stop if the video is played.
+If you want to pause, just click the radio icon one more time. The audio will automatically stop if the video is played.
 
 
 
