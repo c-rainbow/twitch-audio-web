@@ -135,9 +135,9 @@ const domObserverConfig = { attributes: false, childList: true, subtree: true };
 
 
 const enum PlayingState {
-    DISABLED,
-    PAUSED,
-    PLAYING,
+    DISABLED = "disabled",
+    PAUSED = "paused",
+    PLAYING = "playing",
 }
 
 
@@ -264,18 +264,8 @@ class ControlGroup {
         buttonWrapperDom.innerHTML = initialButtonDom;
         this.radioButton = buttonWrapperDom.getElementsByTagName("button")[0];
         markProcessed(this.radioButton);
-        
-        // By default, make the state disabled
-        let stateAttrVal: string = "disabled";
-        const playingState = this.player.playingState;
-        if(playingState === PlayingState.PAUSED) {
-            stateAttrVal = "paused";
-        }
-        else if (playingState === PlayingState.PLAYING) {
-            stateAttrVal = "playing";
-        }
-        
-        this.radioButton.setAttribute(radioModeStateAttr, stateAttrVal)
+               
+        this.radioButton.setAttribute(radioModeStateAttr, this.player.playingState);
         this.radioButton.onclick = this.player.onRadioButtonClicked.bind(this.player);
         this.controlGroupElem.appendChild(buttonWrapperDom);
     }
@@ -292,17 +282,17 @@ class ControlGroup {
         }
         
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, "playing");
+        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.PLAYING);
     }
 
     updateForPause() {
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, "paused");
+        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.PAUSED);
     }
 
     updateForDisabled() {
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, "disabled");
+        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.DISABLED);
     }
 
     destroy() {
