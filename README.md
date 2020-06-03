@@ -14,6 +14,8 @@ Clicking the icon will start playing the audio_only stream, and the icon becomes
 
 ![Radio mode on](https://raw.githubusercontent.com/c-rainbow/twitch-audio-web/master/public/images/radiomode.png)
 
+The volume can be adjusted in the same way as the video, using the same volume slider.
+
 If you want to pause, just click the radio icon one more time. The audio will automatically stop if the video is played.
 
 
