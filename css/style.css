@@ -4,14 +4,14 @@
     display:none;
 }
 
-.audio-only-button-paused svg {
+button.radio-mode-button[data-radio-mode-state="paused"] svg {
     fill: white !important;
 }
 
-.audio-only-button-playing svg {
+button.radio-mode-button[data-radio-mode-state="playing"] svg {
     fill: orange !important;
 }
 
-.audio-only-button-disabled svg {
+button.radio-mode-button[data-radio-mode-state="disabled"] svg {
     fill: gray !important;
 }

@@ -6,9 +6,10 @@ import { getChannelFromWebUrl, GetUrlsResponse, parseAudioOnlyUrl } from "./url"
 // TODO: Any better way than HTML as string?
 const initialButtonDom = `
 <div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
-    <button class="audio-only-button tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
-            data-a-target="audio-only-button"
-            aria-label="Audio only">
+    <button class="radio-mode-button tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
+            data-a-target="radio-mode-button"
+            data-radio-mode-state="disabled"
+            aria-label="Radio Mode">
         <div class="tw-align-items-center tw-flex tw-flex-grow-0">
             <span class="tw-button-icon__icon">
                 <div class="button-icon-div" style="width: 2rem; height: 2rem;">
@@ -27,6 +28,13 @@ const initialButtonDom = `
 </div>
 `;
    
+const processedAttr = "data-radio-mode-processed";
+const processedAttrVal = "processed"
+
+const videoPlayerStateAttr = "data-a-player-state";
+
+const radioModeStateAttr = "data-radio-mode-state";
+const playerIdAttr = "data-radio-mode-player-id";
 
 const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
@@ -36,9 +44,9 @@ const controlGroupProcessedClass = "control-group-processed";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
 const volumeSliderAttr = "input[data-a-target='player-volume-slider']";
 
-const radioButtonPausedClass = "audio-only-button-paused";
-const radioButtonPlayingClass = "audio-only-button-playing";
-const radioButtonDisabledClass = "audio-only-button-disabled";
+const radioButtonPausedClass = "radio-mode-button-paused";
+const radioButtonPlayingClass = "radio-mode-button-playing";
+const radioButtonDisabledClass = "radio-mode-button-disabled";
 
 const attrObserverConfig = { attributes: true, childList: false, subtree: false };
 const domObserverConfig = { attributes: false, childList: true, subtree: true };
@@ -79,7 +87,7 @@ const domObserverConfig = { attributes: false, childList: true, subtree: true };
  *       3-3-2-1. also remove the radio mode button from DOM
  * 
  * 4. Video play/pause button checks for
- *   4-1. Attribute change "data-a-player-state": "playing" or "paused"
+ *   4-1. Attribute change videoPlayerStateAttr: "playing" or "paused"
  *     4-1-1. If attribute value changed to "playing", stop all audio in the VideoPlayerContainer
  * 
  * 5. Volume slider checks for
@@ -133,6 +141,15 @@ const enum PlayingState {
 }
 
 
+function isProcessed(element: Element): boolean {
+    return element?.getAttribute(processedAttr) === processedAttrVal;
+}
+
+function markProcessed(element: Element) {
+    element?.setAttribute(processedAttr, processedAttrVal);
+}
+
+
 class ControlGroup {
     controlGroupElem: HTMLElement;
     player: VideoPlayer;
@@ -170,12 +187,11 @@ class ControlGroup {
             return;
         }
 
-        const classes = playButtonElem.classList;
         // This element was already added to this.playButtonElem. Ignore.
-        if(classes.contains("play-pause-button-processed")) {
+        if(isProcessed(playButtonElem)) {
             return;
         }
-        classes.add("play-pause-button-processed");
+        markProcessed(playButtonElem);
 
         // If exists, remove the existing one
         if(this.playButtonElem) {
@@ -193,7 +209,7 @@ class ControlGroup {
     }
 
     pauseAudioForVideo() {
-        const state = this.playButtonElem.getAttribute("data-a-player-state");
+        const state = this.playButtonElem.getAttribute(videoPlayerStateAttr);
         if(state === "playing") {  // Video state from paused to playing
             this.player.pauseAll();  // Pause audio in all player instances
         }
@@ -214,12 +230,11 @@ class ControlGroup {
             return;
         }
 
-        const classes = volumeSliderElem.classList;
         // This element was already added to this.volumeSliderElem. Ignore.
-        if(classes.contains("volume-slider-processed")) {
+        if(isProcessed(volumeSliderElem)) {
             return;
         }
-        classes.add("volume-slider-processed");
+        markProcessed(volumeSliderElem);
 
         // If exists, remove the existing one
         if(this.volumeSliderElem) {
@@ -240,72 +255,69 @@ class ControlGroup {
         }
 
         // If the button was already created, do nothing
-        const classes = this.radioButton?.classList;
-        if(classes?.contains("radio-button-processed")) {
+        if(isProcessed(this.radioButton)) {
             return;
         }
 
         // TODO: Use webpack html loader
         const buttonWrapperDom = document.createElement("div")
         buttonWrapperDom.innerHTML = initialButtonDom;
-    
         this.radioButton = buttonWrapperDom.getElementsByTagName("button")[0];
-        this.radioButton.classList.add("radio-button-processed");
-        let stateClass = radioButtonDisabledClass;
-        switch(this.player.playingState) {
-            case PlayingState.DISABLED:
-                stateClass = radioButtonDisabledClass;
-                break;
-            case PlayingState.PAUSED:
-                stateClass = radioButtonPausedClass;
-                break;
-            case PlayingState.PLAYING:
-                stateClass = radioButtonPlayingClass;
-                break;
+        markProcessed(this.radioButton);
+        
+        // By default, make the state disabled
+        let stateAttrVal: string = "disabled";
+        const playingState = this.player.playingState;
+        if(playingState === PlayingState.PAUSED) {
+            stateAttrVal = "paused";
         }
-        this.radioButton.classList.add(stateClass);
+        else if (playingState === PlayingState.PLAYING) {
+            stateAttrVal = "playing";
+        }
+        
+        this.radioButton.setAttribute(radioModeStateAttr, stateAttrVal)
         this.radioButton.onclick = this.player.onRadioButtonClicked.bind(this.player);
         this.controlGroupElem.appendChild(buttonWrapperDom);
     }
 
     updateForPlay() {
-        // NOTE: There is 1~3 seconds of delay between audio-only button click and sound being played.
+        // NOTE: There is 1~3 seconds of delay between radio-mode button click and sound being played.
         // It's better to show some intermediate state (icon change, mouse cursor change, etc) in the meanwhile
 
         // Stop the video if playing
-        const videoState = this.playButtonElem?.getAttribute("data-a-player-state");
+        const videoState = this.playButtonElem?.getAttribute(videoPlayerStateAttr);
         if(videoState === "playing") {
             // Is there a better way to pause video than this "click" hack?
             this.playButtonElem.click();
         }
         
         // Change the radio button icon
-        const classes = this.radioButton?.classList;
-        classes?.remove(radioButtonPausedClass);
-        classes?.add(radioButtonPlayingClass);
-        classes?.remove(radioButtonDisabledClass);
+        this.radioButton.setAttribute(radioModeStateAttr, "playing");
     }
 
     updateForPause() {
         // Change the radio button icon
-        const classes = this.radioButton?.classList;
-        classes?.add(radioButtonPausedClass);
-        classes?.remove(radioButtonPlayingClass);
-        classes?.remove(radioButtonDisabledClass);
+        this.radioButton.setAttribute(radioModeStateAttr, "paused");
     }
 
     updateForDisabled() {
         // Change the radio button icon
-        const classes = this.radioButton?.classList;
-        classes?.remove(radioButtonPausedClass);
-        classes?.remove(radioButtonPlayingClass);
-        classes?.add(radioButtonDisabledClass);
+        this.radioButton.setAttribute(radioModeStateAttr, "disabled");
     }
 
     destroy() {
         this.componentsObserver?.disconnect();
         this.playButtonObserver?.disconnect();
         this.volumeObserver?.disconnect();
+        // Is this necessary?
+        this.controlGroupElem = null;
+        this.player = null;
+        this.playButtonElem  = null;
+        this.volumeSliderElem = null;
+        this.radioButton = null;
+        this.componentsObserver = null;
+        this.playButtonObserver = null;
+        this.volumeObserver = null;
     }
 }
 
@@ -344,11 +356,10 @@ class VideoPlayer {
         }
 
         // Add processed class name to prevent duplicate processing of this element
-        const classes = controlGroupElem.classList;
-        if(classes.contains(controlGroupProcessedClass)) {
+        if(isProcessed(controlGroupElem)) {
             return;
         }
-        classes.add(controlGroupProcessedClass);
+        markProcessed(controlGroupElem);
 
         this.controlGroup?.destroy();
         this.controlGroup = new ControlGroup(this, controlGroupElem as HTMLElement);
@@ -470,12 +481,8 @@ class VideoPlayer {
         // For now, the logic for checking live/recorded video is existence of time seekbar.
         const seekbar = this.playerElem.getElementsByClassName("seekbar-interaction-area")?.[0];
 
-        // When seekbar disappeared and the button is still disabled.
-        /*if(!seekbar && this.playingState === PlayingState.DISABLED) {
-            this.pause();
-        }
         // When seekbar appeared and the radio button is not disabled yet.
-        else*/ if(seekbar && this.playingState != PlayingState.DISABLED) {
+        if(seekbar && this.playingState !== PlayingState.DISABLED) {
             this.disable();
         }
     }
@@ -519,7 +526,7 @@ export class VideoPlayerContainer {
         const playerElems = document.body.getElementsByClassName(videoPlayerClass);
         for(let playerElem of playerElems) {
             // If the div is not already processed
-            if(!playerElem.classList.contains(videoPlayerProcessedClass)) {
+            if(!isProcessed(playerElem)) {
                 console.debug("New video player detected");
                 this.createNewPlayer(playerElem as HTMLElement);
             }
@@ -530,21 +537,19 @@ export class VideoPlayerContainer {
             return;
         }
 
-        this.destroyNonexistingPlayers(playerElems);
+        this.garbageCollectPlayers(playerElems);
     }
 
-    destroyNonexistingPlayers(playerElems: HTMLCollectionOf<Element>) {
-        // Remove video players not in DOM anymore
+    // Remove video players not in DOM anymore.
+    // This happens when a user browses from a non-channel page (main, directory, etc.) to a channel page,
+    // or between non-channel pages.
+    garbageCollectPlayers(playerElems: HTMLCollectionOf<Element>) {
         const allPlayerIdsInDom: string[] = [];
         for(let playerElem of playerElems) {
-            const classes = playerElem.classList;
-            for(let className of classes) {
-                if(className.startsWith(videoPlayerIdPrefix)) {
-                    allPlayerIdsInDom.push(className);
-                }
-            }
+            allPlayerIdsInDom.push(playerElem.getAttribute(playerIdAttr));
         }
         console.debug("All playerIds in DOM: " + allPlayerIdsInDom);
+
         const newlist = [];
         for(let player of this.players) {
             const playerId = player.playerId;
@@ -560,14 +565,14 @@ export class VideoPlayerContainer {
     }
 
     createNewPlayer(playerElem: HTMLElement) {
-        if(playerElem.classList.contains(videoPlayerProcessedClass)) {
+        if(isProcessed(playerElem)) {
             return;
         }
+        markProcessed(playerElem);
 
         const newPlayerId = videoPlayerIdPrefix + this.nextId;
         this.nextId += 1;
-        playerElem.classList.add(videoPlayerProcessedClass);
-        playerElem.classList.add(newPlayerId);
+        playerElem.setAttribute(playerIdAttr, newPlayerId);
 
         const player = new VideoPlayer(newPlayerId, this, playerElem);
         this.players.push(player);
@@ -575,12 +580,13 @@ export class VideoPlayerContainer {
 
     pauseExcept(playerId: string) {
         for(let player of this.players) {
-            if(player.playerId != playerId) player.pause();
+            if(player.playerId !== playerId) player.pause();
         }
     }
 
     destroy() {  // Will this function ever be used?
         this.observer?.disconnect();
+        this.observer = null;
         for(let player of this.players) {
             player.destroy();
         }
