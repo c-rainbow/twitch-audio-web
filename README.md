@@ -23,7 +23,9 @@ If you want to pause, just click the radio icon one more time. The audio will au
 
 ## Install
 
-The official installation instruction can be found [here](https://developer.chrome.com/extensions/getstarted).
+The extension can be installed in [Chrome Web Store](https://chrome.google.com/webstore/detail/twitch-radio-mode/dbojkfdnamfipdnlknbpjphemjnldeoo)
+
+If you want to download the source code yourself, please follow the steps below, or follow the official installation instruction which can be found [here](https://developer.chrome.com/extensions/getstarted).
 
 1. Download or clone the code, and unzip the file
 2. In Google Chrome, go to chrome://extensions

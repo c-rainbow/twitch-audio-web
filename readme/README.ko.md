@@ -4,9 +4,9 @@
 
 ## 설치
 
-현재 크롬 웹스토어에 등록이 진행중인 확장 프로그램이라 직접 다운받으신 후 개발자 모드에서 설치하셔야 합니다.
+[크롬 웹스토어](https://chrome.google.com/webstore/detail/twitch-radio-mode/dbojkfdnamfipdnlknbpjphemjnldeoo) 에서 설치 가능합니다.
 
-자세한 방법은 [여기](https://support.google.com/chrome/a/answer/2714278?hl=ko)의 2단계를 참조해 주세요.
+코드를 다운받아 설치하실 경우 [여기](https://support.google.com/chrome/a/answer/2714278?hl=ko)의 2단계를 참조해 주세요.
 
 다운받은 zip 파일에 이미 컴파일된 자바스크립트 코드가 있어 실행을 위해 별도의 빌드는 필요하지 않습니다.
 

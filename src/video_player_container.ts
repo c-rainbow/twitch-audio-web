@@ -40,13 +40,8 @@ const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
 const videoPlayerIdPrefix = videoPlayerProcessedClass + "-";
 const controlGroupClass = "player-controls__left-control-group";
-const controlGroupProcessedClass = "control-group-processed";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
 const volumeSliderAttr = "input[data-a-target='player-volume-slider']";
-
-const radioButtonPausedClass = "radio-mode-button-paused";
-const radioButtonPlayingClass = "radio-mode-button-playing";
-const radioButtonDisabledClass = "radio-mode-button-disabled";
 
 const attrObserverConfig = { attributes: true, childList: false, subtree: false };
 const domObserverConfig = { attributes: false, childList: true, subtree: true };
@@ -327,7 +322,7 @@ class VideoPlayer {
         this.playerId = playerId;
         this.container = container;
         this.playerElem = playerElem;
-        this.playingState = PlayingState.PAUSED;
+        this.playingState = PlayingState.DISABLED;
 
         this.tryUpdatingControlGroup();
         this.controlGroupObserver = new MutationObserver(this.tryUpdatingControlGroup.bind(this));

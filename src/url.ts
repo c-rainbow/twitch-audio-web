@@ -1,7 +1,8 @@
 
 const twitchDomain : string = "twitch.tv/";
 // Non-exhuastive list of non-channel routes in twitch.tv
-const nonChannels : string[] = ["directory", "videos", "u", "settings"];
+const nonChannels : string[] = [
+    "", "directory", "videos", "u", "settings", "friends", "subscriptions", "inventory", "wallet"];
 
 const apiDomain : string = "api.twitch.tv/api/channels/";
 const accessToken : string = "/access_token";
