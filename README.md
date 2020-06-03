@@ -24,17 +24,19 @@ The audio will automatically stop if the video is played.
 
 ## Install
 
-Download or clone the code, and unzip the file
+The official installation instruction can be found [here](https://developer.chrome.com/extensions/getstarted).
 
-In Google Chrome, go to chrome://extensions
+1. Download or clone the code, and unzip the file
+2. In Google Chrome, go to chrome://extensions
+3. On the top right, enable "Developer Mode"
+4. Click "Load Unpacked", locate the unzipped directory.
 
-On the top right, enable "Developer Mode"
+The code comes with pre-built Javascript code which can be readily used as an extension.
 
-Click "Load Unpacked, locate the unzipped directory.
 
 ## Develop
 
-The extension is created with TypeScript and uses Webpack to build.
+The extension is created with TypeScript and uses Webpack to build the code.
 
 Please install webpack and other dependencies for the project.
 
@@ -42,7 +44,7 @@ Please install webpack and other dependencies for the project.
 > npm i
 ```
 
-Build the project. Two files (dist/background.js, dist/conentscript.js) will be updated with the current TypeScript code.
+After you build the project, two files (dist/background.js, dist/conentscript.js) will be updated with the current TypeScript code.
 
 ```
 > webpack
