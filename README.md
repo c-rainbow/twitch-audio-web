@@ -2,7 +2,8 @@
 
 This extension for Google Chrome browser lets users play the stream in radio mode.
 
-
+Korean version of README can be found [here](https://github.com/c-rainbow/twitch-audio-web/blob/master/readme/README.ko.md).
+한국어 설명서는 [여기](https://github.com/c-rainbow/twitch-audio-web/blob/master/readme/README.ko.md)로
 
 ## Use
 
