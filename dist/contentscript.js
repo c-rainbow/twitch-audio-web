@@ -371,11 +371,15 @@ const initialButtonDom = `
         <div class="tw-align-items-center tw-flex tw-flex-grow-0">
             <span class="tw-button-icon__icon">
                 <div class="button-icon-div" style="width: 2rem; height: 2rem;">
-                    <!-- Google Material Design Radio Icon. Apache License v2.0 -->
                     <svg class="tw-icon__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                        <path d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.89 2 2 2h16c1.11 0 2-.9 2-2V8c0-1.11-.89-2-2-2H8.3l8.26-3.34L15.88 1 3.24 6.15zM7 20c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-8h-2v-2h-2v2H4V8h16v4z"/>
+                        <path d="M3 18v-6a9 9 0 1118 0v6" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5z" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
+                    // <!-- Google Material Design Radio Icon. Apache License v2.0 -->
+                    // <svg class="tw-icon__svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                    //     <path d="M0 0h24v24H0z" fill="none"/>
+                    //     <path d="M3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.89 2 2 2h16c1.11 0 2-.9 2-2V8c0-1.11-.89-2-2-2H8.3l8.26-3.34L15.88 1 3.24 6.15zM7 20c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-8h-2v-2h-2v2H4V8h16v4z"/>
+                    // </svg>
                 </div>
             </span>
         </div>
