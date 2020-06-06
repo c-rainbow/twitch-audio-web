@@ -10,6 +10,7 @@
         "128": "icons/icon_128w.png"
     },
     "permissions": [
+        "storage",
         "webRequest",
         "*://*.twitch.tv/*",
         "*://*.ttvnw.net/*"

@@ -444,6 +444,15 @@ class VideoPlayer {
             this.overlayButton.removeAttribute("style");
             this.overlayButton.classList.add("tw-block");
         }
+
+        const onPause = function(result: any) {
+            console.log('Value currently is ' + JSON.stringify(result));
+            if(result.autoplay) {
+                this.controlGroup.playButtonElem.click();
+            }
+        }
+
+        chrome.storage.local.get(['autoplay'], onPause.bind(this));
     }
 
     // Pause audio in all players

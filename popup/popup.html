@@ -1,17 +1,27 @@
   <!DOCTYPE html>
   <html>
     <head>
-      <style>
-        button {
-          height: 30px;
-          width: 30px;
-          outline: none;
-        }
-      </style>
+      <link rel="stylesheet" href="popup.css"/>
+      <script src="popup.js"></script>
     </head>
     <body>
-      <button id="changeColor">hello</button>
-      
+      <img src="icon_48w.png"/>
+      <h2>Twitch Radio Mode v 0.1.0</h2>
+      <h4>On pausing radio mode</h4>
+      <div>
+        <span>
+        Just pause
+        </span>
+        <span>
+        <label class="switch">
+          <input type="checkbox" id="autoplay-checkbox">
+          <span class="slider round"></span>
+        </label>
+        </span>
+        <span>
+        Autoplay
+        </span>
+      </div>
     </body>
   </html>
 
@@ -19,7 +29,7 @@
   <!--
 
 팝업에 들어갈 것:
-1. 로고
+.....1. 로고
 2. 현재 URL에 있는 채널 비디오/오디오 주소 (사용자가 복사해서 가져갈 수 있게)
 3. 설정: 라디오 재생 중에 라디오 버튼을 한번 더 누르면 라디오만 꺼지기 or 비디오가 자동재생되기 선택
 4. 그 외 각종 설정: (기본 버퍼 사이즈)?
