@@ -53,7 +53,7 @@ const domObserverConfig = { attributes: false, childList: true, subtree: true };
  *   1-2. If div with class "video-player", process it. Check #2
  * 
  * 2. Create VideoPlayer, video-player class div checks for 1 attribute change, 3 subtree changes
- *   2-1. attribute "data-a-player-type": "site", "site_mini", "clips-watch"
+ *   2-1. attribute "data-a-player-type": "site", "site_mini", "clips-watch", "channel_home_carousel"
  *     2-2-2. Change the mode of VideoPlayer if necessary
  *     2-2-3. Mode: Tuple of (layout, video_type).
  *       2-2-3-1. layout: "site" | "site_mini"
@@ -317,20 +317,37 @@ class VideoPlayer {
     controlGroupObserver: MutationObserver;
     hls: Hls;
     audioElem: HTMLVideoElement;
+    videoElem: HTMLVideoElement;
+    imageElem: HTMLImageElement;
+    overlayButton: Element;
 
     constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement) {
         this.playerId = playerId;
         this.container = container;
         this.playerElem = playerElem;
-        this.playingState = PlayingState.DISABLED;
+        this.playingState = PlayingState.PAUSED;
 
         this.tryUpdatingControlGroup();
         this.controlGroupObserver = new MutationObserver(this.tryUpdatingControlGroup.bind(this));
         this.controlGroupObserver.observe(this.playerElem, domObserverConfig);
+
+        this.videoElem = playerElem.getElementsByTagName("video")[0];
+        //this.videoElem.setAttribute("poster", "https://static-cdn.jtvnw.net/ttv-boxart/Science%20&%20Technology-285x380.jpg");
+        this.imageElem = document.createElement("img");
+        this.imageElem.src = "https://static-cdn.jtvnw.net/ttv-boxart/Science%20&%20Technology-285x380.jpg";
+        this.imageElem.style.display = "none";
+        this.videoElem.parentNode.insertBefore(this.imageElem, this.videoElem.nextSibling);        
     }
 
     tryUpdatingControlGroup() {
         this.updateControlsPerLiveness();
+        //data-a-target="player-overlay-play-button"
+        this.overlayButton = this.playerElem.querySelectorAll("button[data-a-target='player-overlay-play-button']")?.[0];
+
+        if(this.overlayButton && this.playingState == PlayingState.PLAYING) {
+            (this.overlayButton as HTMLElement).style.display = "none";
+            this.overlayButton.classList.remove("tw-block");
+        }
 
         // Check if the control group DOM is ready
         const controlGroupElem = this.playerElem.getElementsByClassName(controlGroupClass)?.[0];
@@ -359,6 +376,14 @@ class VideoPlayer {
         if(this.audioElem) {
             console.debug("Audio element already exists");
             return;
+        }
+        if(this.videoElem) {
+            this.videoElem.style.display = "none";
+            this.imageElem?.removeAttribute("style");
+        }
+        if(this.overlayButton) {
+            (this.overlayButton as HTMLElement).style.display = "none";
+            this.overlayButton.classList.remove("tw-block");
         }
 
         // Create a separate <video> element to play audio.
@@ -410,6 +435,15 @@ class VideoPlayer {
         }
         this.playingState = PlayingState.PAUSED;
         this.controlGroup?.updateForPause();
+
+        if(this.videoElem) {
+            this.videoElem.removeAttribute("style");
+            this.imageElem.style.display = "none";
+        }
+        if(this.overlayButton) {
+            this.overlayButton.removeAttribute("style");
+            this.overlayButton.classList.add("tw-block");
+        }
     }
 
     // Pause audio in all players
