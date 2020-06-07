@@ -1,6 +1,10 @@
 
 .nodisplay {
-    display:none !important;
+    display: none !important;
+}
+
+button.radio-mode-button[data-radio-mode-state="unknown"] {
+    display: none !important;
 }
 
 button.radio-mode-button[data-radio-mode-state="paused"] svg {
@@ -16,5 +20,5 @@ button.radio-mode-button[data-radio-mode-state="disabled"] svg {
 }
 
 button.radio-mode-button[data-radio-mode-state="disabled"]:hover {
-    cursor: not-allowed;
+    cursor: default;
 }
