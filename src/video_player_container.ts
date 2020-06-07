@@ -23,7 +23,7 @@ const initialButtonDom = `
         </div>
     </button>
     <div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip">
-        Radio mode
+        
     </div>
 </div>
 `;
@@ -151,6 +151,7 @@ class ControlGroup {
     playButtonElem: HTMLElement;
     volumeSliderElem: HTMLInputElement;
     radioButton: HTMLElement;
+    tooltipElem: HTMLElement;
     componentsObserver: MutationObserver;
     playButtonObserver: MutationObserver;
     volumeObserver: MutationObserver; 
@@ -259,10 +260,16 @@ class ControlGroup {
         buttonWrapperDom.innerHTML = initialButtonDom;
         this.radioButton = buttonWrapperDom.getElementsByTagName("button")[0];
         markProcessed(this.radioButton);
+
+        const playingState = this.player.playingState
+
+        this.tooltipElem = buttonWrapperDom.getElementsByClassName("tw-tooltip")?.[0] as HTMLElement;
+        this.player.updateTooltipText(this.tooltipElem);
                
-        this.radioButton.setAttribute(radioModeStateAttr, this.player.playingState);
+        this.radioButton.setAttribute(radioModeStateAttr, playingState);
         this.radioButton.onclick = this.player.onRadioButtonClicked.bind(this.player);
         this.controlGroupElem.appendChild(buttonWrapperDom);
+
     }
 
     updateForPlay() {
@@ -311,6 +318,7 @@ class VideoPlayer {
     hls: Hls;
     audioElem: HTMLVideoElement;
     videoElem: HTMLVideoElement;
+
 
     constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement) {
         this.playerId = playerId;
@@ -388,6 +396,7 @@ class VideoPlayer {
         // Stop the video if playing
         this.pauseVideo();
         this.controlGroup?.updateForPlay();
+        this.updateTooltipText();
     }
 
     pause() {
@@ -415,13 +424,13 @@ class VideoPlayer {
         }
         this.playingState = PlayingState.PAUSED;
         this.controlGroup?.updateForPause();
+        this.updateTooltipText();
 
         const onPause = function(result: any) {
             if(result.autoplay) {
                 this.playVideo();
             }
         }
-
         chrome.storage.local.get(['autoplay'], onPause.bind(this));
     }
 
@@ -455,6 +464,7 @@ class VideoPlayer {
         }
         this.playingState = PlayingState.DISABLED;
         this.controlGroup?.updateForDisabled();
+        this.updateTooltipText();
     }
 
     destroy() {  // What else to do here?
@@ -493,6 +503,11 @@ class VideoPlayer {
         return channel !== null;
     }
 
+    updateLiveStatus() {
+        const seekbar = this.playerElem.getElementsByClassName("seekbar-interaction-area")?.[0];
+        return Boolean(seekbar);
+    }
+
     updateControlsPerLiveness() {
         // If watching a live stream, enable the control group.
         // If watching VOD of clip, disable the control group.
@@ -502,6 +517,44 @@ class VideoPlayer {
         // When seekbar appeared and the radio button is not disabled yet.
         if(seekbar && this.playingState !== PlayingState.DISABLED) {
             this.disable();
+        }
+    }
+
+    updateTooltipText(tooltipElem?: Element) {
+        tooltipElem = tooltipElem ?? this.controlGroup?.tooltipElem;
+        if(!tooltipElem) {
+            return;
+        }
+
+        /**
+         * Cases
+         * 1. Disabled because main page
+         * 2. Disabled because non-channel page
+         * 3. Disabled because VOD/clip
+         * 4. Paused
+         * 5. Playing
+         */
+        const playingState = this.playingState;
+        let tooltipText = "Radio mode";
+        if(playingState === PlayingState.DISABLED) {
+            const channel = getChannelFromWebUrl();
+            if(!channel) {
+                tooltipElem.textContent = "Radio mode can only be used in the streamer's channel";
+                return;
+            }
+            // TODO: Refactor, or at least cache
+            const seekbar = this.playerElem.getElementsByClassName("seekbar-interaction-area")?.[0];
+            if(seekbar) {
+                tooltipElem.textContent = "Radio mode can only be used in live stream";
+                return;
+            }
+            tooltipElem.textContent = "Radio mode is disabled";
+        }
+        else if(playingState === PlayingState.PAUSED) {
+            tooltipElem.textContent = "Start Radio mode";
+        }
+        else if(playingState === PlayingState.PLAYING) {
+            tooltipElem.textContent = "End Radio mode";
         }
     }
 
