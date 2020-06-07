@@ -29,14 +29,19 @@ export function parseAudioOnlyUrl(content: string) : string {
 }
 
 
-export function getChannelFromWebUrl(weburl?: string) : string {
-    // Channel name may not be available from the main page URL
-    const url = weburl ?? location.href;
-    const channel = getNameBetweenStrings(url, twitchDomain, "/", true);
-    console.log("Channel name " + channel + ", from URL: " + url)
+export function getChannelFromWebUrl() : string {
+    const url = new URL(location.href);
+    const splited = url.pathname.split("/");
+    const filtered = splited.filter(elem => elem.length > 0);
+    if(filtered.length != 1) {
+        return null;
+    }   
 
+    const channel = filtered[0];
     // Filter out some non-channel pages with similar URL pattern as channel pages
-    if (nonChannels.indexOf(channel) != -1) return null;
+    if (nonChannels.indexOf(channel) != -1) {
+        return null;
+    }
     return channel;
 }
 
