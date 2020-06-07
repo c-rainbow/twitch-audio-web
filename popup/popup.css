@@ -68,7 +68,7 @@ body {
     right: 0;
     bottom: 0;
     background-color: rgb(189, 193, 198);
-    transition: .2s;
+    transition: 0.1s;
   }
   
   .slider:before {
@@ -79,7 +79,7 @@ body {
     left: 2px;
     bottom: 2px;
     background-color: white;
-    transition: .2s;
+    transition: 0.1s;
   }
   
   input:checked + .slider {

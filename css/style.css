@@ -11,6 +11,11 @@ button.radio-mode-button[data-radio-mode-state="paused"] svg {
     fill: white !important;
 }
 
+button.radio-mode-button[data-radio-mode-state="loading"] svg {
+    fill: white !important;
+    cursor: progress;
+}
+
 button.radio-mode-button[data-radio-mode-state="playing"] svg {
     fill: orange !important;
 }

@@ -473,13 +473,15 @@ class VideoPlayer {
         // but for some reason the event is not triggered with typescript+webpack.
         const audioPlayCallback = function() {
             console.log("Play started");
+            this.controlGroup?.updateForPlay();
         }
+        this.controlGroup.radioButton.setAttribute(radioModeStateAttr, "loading");
         this.audioElem.play().then(audioPlayCallback.bind(this));
         this.playingState = PlayingState.PLAYING;
         
         // Stop the video if playing
         this.pauseVideo();
-        this.controlGroup?.updateForPlay();
+        //this.controlGroup?.updateForPlay();
     }
 
     pauseFromDisabled() {

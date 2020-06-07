@@ -15,5 +15,4 @@ document.addEventListener("DOMContentLoaded", function() {
         autoplayBox.checked = autoplay;
         autoplayBox.onchange = onConfigChanged.bind(autoplayBox);
     });
-    
 });
