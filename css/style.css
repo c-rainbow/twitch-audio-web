@@ -1,7 +1,6 @@
 
-
 .nodisplay {
-    display:none;
+    display:none !important;
 }
 
 button.radio-mode-button[data-radio-mode-state="paused"] svg {
@@ -14,4 +13,8 @@ button.radio-mode-button[data-radio-mode-state="playing"] svg {
 
 button.radio-mode-button[data-radio-mode-state="disabled"] svg {
     fill: gray !important;
+}
+
+button.radio-mode-button[data-radio-mode-state="disabled"] :hover {
+    cursor: not-allowed;
 }

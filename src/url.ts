@@ -36,7 +36,7 @@ export function getChannelFromWebUrl(weburl?: string) : string {
     console.log("Channel name " + channel + ", from URL: " + url)
 
     // Filter out some non-channel pages with similar URL pattern as channel pages
-    if (channel in nonChannels) return null;
+    if (nonChannels.indexOf(channel) != -1) return null;
     return channel;
 }
 
