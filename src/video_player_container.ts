@@ -268,26 +268,19 @@ class ControlGroup {
     updateForPlay() {
         // NOTE: There is 1~3 seconds of delay between radio-mode button click and sound being played.
         // It's better to show some intermediate state (icon change, mouse cursor change, etc) in the meanwhile
-
-        // Stop the video if playing
-        const videoState = this.playButtonElem?.getAttribute(videoPlayerStateAttr);
-        if(videoState === "playing") {
-            // Is there a better way to pause video than this "click" hack?
-            this.playButtonElem.click();
-        }
         
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.PLAYING);
+        this.radioButton?.setAttribute(radioModeStateAttr, PlayingState.PLAYING);
     }
 
     updateForPause() {
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.PAUSED);
+        this.radioButton?.setAttribute(radioModeStateAttr, PlayingState.PAUSED);
     }
 
     updateForDisabled() {
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.DISABLED);
+        this.radioButton?.setAttribute(radioModeStateAttr, PlayingState.DISABLED);
     }
 
     destroy() {
@@ -318,8 +311,6 @@ class VideoPlayer {
     hls: Hls;
     audioElem: HTMLVideoElement;
     videoElem: HTMLVideoElement;
-    imageElem: HTMLImageElement;
-    overlayButton: Element;
 
     constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement) {
         this.playerId = playerId;
@@ -331,23 +322,11 @@ class VideoPlayer {
         this.controlGroupObserver = new MutationObserver(this.tryUpdatingControlGroup.bind(this));
         this.controlGroupObserver.observe(this.playerElem, domObserverConfig);
 
-        this.videoElem = playerElem.getElementsByTagName("video")[0];
-        //this.videoElem.setAttribute("poster", "https://static-cdn.jtvnw.net/ttv-boxart/Science%20&%20Technology-285x380.jpg");
-        this.imageElem = document.createElement("img");
-        this.imageElem.src = "https://static-cdn.jtvnw.net/ttv-boxart/Science%20&%20Technology-285x380.jpg";
-        this.imageElem.style.display = "none";
-        this.videoElem.parentNode.insertBefore(this.imageElem, this.videoElem.nextSibling);        
+        this.videoElem = playerElem.getElementsByTagName("video")[0];   
     }
 
     tryUpdatingControlGroup() {
         this.updateControlsPerLiveness();
-        //data-a-target="player-overlay-play-button"
-        this.overlayButton = this.playerElem.querySelectorAll("button[data-a-target='player-overlay-play-button']")?.[0];
-
-        if(this.overlayButton && this.playingState == PlayingState.PLAYING) {
-            (this.overlayButton as HTMLElement).style.display = "none";
-            this.overlayButton.classList.remove("tw-block");
-        }
 
         // Check if the control group DOM is ready
         const controlGroupElem = this.playerElem.getElementsByClassName(controlGroupClass)?.[0];
@@ -368,6 +347,11 @@ class VideoPlayer {
     }
 
     play(mediaUrl: string) {
+        const playingState = this.playingState;
+        if(playingState === PlayingState.DISABLED || playingState === PlayingState.PLAYING) {
+            return;
+        }
+
         if(!mediaUrl) {
             console.debug("No mediaUrl is found to play")
             return;
@@ -377,19 +361,11 @@ class VideoPlayer {
             console.debug("Audio element already exists");
             return;
         }
-        if(this.videoElem) {
-            this.videoElem.style.display = "none";
-            this.imageElem?.removeAttribute("style");
-        }
-        if(this.overlayButton) {
-            (this.overlayButton as HTMLElement).style.display = "none";
-            this.overlayButton.classList.remove("tw-block");
-        }
 
         // Create a separate <video> element to play audio.
         // <audio> can be also used by hls.js, but Typescript forces this to be HTMLVideoElement.
         this.audioElem = <HTMLVideoElement>document.createElement("audio");
-        this.audioElem.style.display = "none";
+        this.audioElem.classList.add("nodisplay");
         this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
@@ -408,11 +384,15 @@ class VideoPlayer {
         }
         this.audioElem.play().then(audioPlayCallback.bind(this));
         this.playingState = PlayingState.PLAYING;
+        
+        // Stop the video if playing
+        this.pauseVideo();
         this.controlGroup?.updateForPlay();
     }
 
     pause() {
-        if(this.playingState === PlayingState.PAUSED) {
+        const playingState = this.playingState;
+        if(playingState === PlayingState.DISABLED || playingState === PlayingState.PAUSED) {
             return;
         }
         if(this.hls) {
@@ -436,23 +416,29 @@ class VideoPlayer {
         this.playingState = PlayingState.PAUSED;
         this.controlGroup?.updateForPause();
 
-        if(this.videoElem) {
-            this.videoElem.removeAttribute("style");
-            this.imageElem.style.display = "none";
-        }
-        if(this.overlayButton) {
-            this.overlayButton.removeAttribute("style");
-            this.overlayButton.classList.add("tw-block");
-        }
-
         const onPause = function(result: any) {
-            console.log('Value currently is ' + JSON.stringify(result));
             if(result.autoplay) {
-                this.controlGroup.playButtonElem.click();
+                this.playVideo();
             }
         }
 
         chrome.storage.local.get(['autoplay'], onPause.bind(this));
+    }
+
+    playVideo() {
+        this.toggleVideoStateIf("paused");
+    }
+
+    pauseVideo() {
+        this.toggleVideoStateIf("playing");
+    }
+
+    toggleVideoStateIf(expectedState: string) {
+        const videoPlayButton = this.controlGroup.playButtonElem;
+        const videoState = videoPlayButton?.getAttribute(videoPlayerStateAttr);
+        if(videoState === expectedState) {
+            videoPlayButton.click();
+        }
     }
 
     // Pause audio in all players
@@ -479,7 +465,6 @@ class VideoPlayer {
     requestPlay() {
         const channel = getChannelFromWebUrl();
         const responseCallback = async function(response: GetUrlsResponse) {
-            console.debug("response for get_audio_url received: " + JSON.stringify(response));
             if(!response?.webUrl?.channel) {
                 // Currently in a non-channel page. Disable 
                 this.disable();

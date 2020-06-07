@@ -15,6 +15,6 @@ button.radio-mode-button[data-radio-mode-state="disabled"] svg {
     fill: gray !important;
 }
 
-button.radio-mode-button[data-radio-mode-state="disabled"] :hover {
+button.radio-mode-button[data-radio-mode-state="disabled"]:hover {
     cursor: not-allowed;
 }
