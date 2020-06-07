@@ -35,8 +35,6 @@ const videoPlayerStateAttr = "data-a-player-state";
 
 const radioModeStateAttr = "data-radio-mode-state";
 const playerIdAttr = "data-radio-mode-player-id";
-const videoPlayerInChannelAttr = "data-radio-mode-in-channel";
-const videoPlayerIsLiveAttr = "data-radio-mode-is-live";
 
 const videoPlayerClass = "video-player";
 const videoPlayerProcessedClass = "video-player-processed";
@@ -302,13 +300,13 @@ class ControlGroup {
 
         let text = "Radio mode";
         if(newState === PlayingState.DISABLED) {
-            text = "Radio mode can only be used in live stream in streamer's channel";
+            text = chrome.i18n.getMessage("RADIO_MODE_DISABLED");
         }
         else if(newState === PlayingState.PAUSED) {
-            text = "Start Radio mode";
+            text = chrome.i18n.getMessage("RADIO_MODE_START");
         }
         else if(newState === PlayingState.PLAYING) {
-            text = "End Radio mode";
+            text = chrome.i18n.getMessage("RADIO_MODE_END");
         }
         else {
             console.debug("updateTooltipText for state " + newState);

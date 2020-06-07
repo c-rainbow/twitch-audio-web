@@ -1,0 +1,26 @@
+{
+    "RADIO_MODE_START": {
+        "message": "Start radio mode",
+        "description": "Tooltip text when radio button is paused"
+    },
+    "RADIO_MODE_DISABLED": {
+        "message": "Radio mode can only be used in live stream in channel page",
+        "description": "Tooltip text when radio button is disabled"
+    },
+    "RADIO_MODE_END": {
+        "message": "End radio mode",
+        "description": "Tooltip text when audio is being played in radio mode"
+    },
+    "AUTOPLAY_VIDEO_ON_RADIO_END": {
+        "message": "Autoplay video when radio mode ends",
+        "description": "Config name in popup"
+    },
+    "POPUP_EXT_NAME": {
+        "message": "Twitch Radio Mode v0.1.0",
+        "description": "Title of extension in popup window"
+    },
+    "EXT_CONFIG_HEADER": {
+        "message": "Configs",
+        "description": "Name of 'configs' section in popup"
+    }
+}

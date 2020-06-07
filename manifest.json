@@ -1,6 +1,7 @@
 {
     "name": "Twitch Radio Mode",
     "version": "0.1.0",
+    "default_locale": "en",
     "description": "Runs Twitch radio mode in web browser",
     "manifest_version": 2,
     "icons": {
