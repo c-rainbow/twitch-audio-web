@@ -33,6 +33,7 @@ export function getChannelFromWebUrl() : string {
     const url = new URL(location.href);
     const splited = url.pathname.split("/");
     const filtered = splited.filter(elem => elem.length > 0);
+    console.debug(`Filtered: ${filtered}, url: ${url.href}`);
     if(filtered.length != 1) {
         return null;
     }   

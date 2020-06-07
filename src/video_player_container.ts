@@ -344,6 +344,8 @@ class VideoPlayer {
     controlGroupObserver: MutationObserver;
     hls: Hls;
     audioElem: HTMLVideoElement;
+    videoElem: HTMLVideoElement;
+    videoElemObserver: MutationObserver;
 
 
     constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement) {
@@ -352,9 +354,14 @@ class VideoPlayer {
         this.playerElem = playerElem;
         this.playingState = getChannelFromWebUrl() ? PlayingState.PAUSED : PlayingState.DISABLED;
 
-        this.tryUpdatingControlGroup();
-        this.controlGroupObserver = new MutationObserver(this.tryUpdatingControlGroup.bind(this));
+        this.tryUpdatingComponents();
+        this.controlGroupObserver = new MutationObserver(this.tryUpdatingComponents.bind(this));
         this.controlGroupObserver.observe(this.playerElem, domObserverConfig);
+    }
+
+    tryUpdatingComponents() {
+        this.tryUpdatingControlGroup();
+        this.tryObservingVideoElem();
     }
 
     tryUpdatingControlGroup() {
@@ -376,10 +383,48 @@ class VideoPlayer {
         this.controlGroup = new ControlGroup(this, controlGroupElem as HTMLElement);
     }
 
+    tryObservingVideoElem() {
+        if(!this.videoElemObserver) {
+            const callback: MutationCallback = function(mutations: MutationRecord[]) {
+                for(let mutation of mutations) {
+                    if(mutation.attributeName == "src") {
+                        this.updateStatus();
+                    }
+                }
+            }
+            this.videoElemObserver = new MutationObserver(callback.bind(this));
+        }
+
+        const videoElem = this.playerElem.getElementsByTagName("video")?.[0];
+        if(!videoElem) {
+            this.videoElemObserver?.disconnect();
+            this.videoElem = null;
+            return;
+        }
+
+        if(isProcessed(videoElem)) {
+            return;
+        }
+        this.videoElem = videoElem;
+        markProcessed(this.videoElem);
+    
+        this.videoElemObserver.observe(this.videoElem, attrObserverConfig); 
+    }
+
+    updateStatus() {
+        const channel = getChannelFromWebUrl();
+        if(channel) {
+            this.enable();
+        }
+        else {
+            this.disable();
+        }
+    }
+
     enable() {
         const state = this.playingState;
         if(state === PlayingState.DISABLED) {
-            this.pause();
+            this.pauseFromDisabled();
         }
     }
 
@@ -437,8 +482,18 @@ class VideoPlayer {
         this.controlGroup?.updateForPlay();
     }
 
+    pauseFromDisabled() {
+        const state = this.playingState;
+        if(state !== PlayingState.DISABLED) {
+            return;
+        }
+        this.playingState = PlayingState.PAUSED;
+        this.controlGroup?.updateForPause();
+    }
+
     pause() {
-        if(this.playingState !== PlayingState.PLAYING) {
+        const state = this.playingState;
+        if(state === PlayingState.PAUSED || state === PlayingState.DISABLED) {
             return;
         }
         if(this.hls) {
