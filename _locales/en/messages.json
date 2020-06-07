@@ -1,4 +1,12 @@
 {
+    "EXT_NAME": {
+        "message": "Twitch Radio Mode",
+        "description": "Extension name"
+    },
+    "EXT_DESCRIPTION": {
+        "message": "Enables radio mode in Chrome web browser",
+        "description": "Extension description"
+    },
     "RADIO_MODE_START": {
         "message": "Start radio mode",
         "description": "Tooltip text when radio button is paused"

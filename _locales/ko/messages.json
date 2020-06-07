@@ -1,4 +1,12 @@
 {
+    "EXT_NAME": {
+        "message": "트위치 라디오 모드",
+        "description": "확장 프로그램 이름"
+    },
+    "EXT_DESCRIPTION": {
+        "message": "웹브라우저에서 트위치 라디오 모드를 가능하게 해주는 확장 프로그램",
+        "description": "확장 프로그램 설명"
+    },
     "RADIO_MODE_START": {
         "message": "라디오 모드 시작하기",
         "description": "라디오 모드가 일시중지되었거나 아직 시작하지 않았을때의 툴팁"
