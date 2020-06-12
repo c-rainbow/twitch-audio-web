@@ -344,6 +344,7 @@ class VideoPlayer {
     audioElem: HTMLVideoElement;
     videoElem: HTMLVideoElement;
     videoElemObserver: MutationObserver;
+    overlayButton: Element;
 
 
     constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement) {
@@ -369,6 +370,12 @@ class VideoPlayer {
             this.controlGroup?.destroy();  // destroy reference to the removed DOM
             this.controlGroup = null;
             return;
+        }
+
+        this.overlayButton = this.playerElem.querySelectorAll("button[data-a-target='player-overlay-play-button']")?.[0];
+        if(this.overlayButton && this.playingState == PlayingState.PLAYING) {
+            this.overlayButton.classList.add("nodisplay");
+            this.overlayButton.classList.remove("tw-block");
         }
 
         // Add processed class name to prevent duplicate processing of this element
@@ -452,6 +459,15 @@ class VideoPlayer {
             return;
         }
 
+        if(this.videoElem) {
+            this.videoElem.classList.add("nodisplay");
+            //this.imageElem?.removeAttribute("style");
+        }
+        if(this.overlayButton) {
+            this.overlayButton.classList.add("nodisplay");
+            this.overlayButton.classList.remove("tw-block");
+        }
+
         // Create a separate <video> element to play audio.
         // <audio> can be also used by hls.js, but Typescript forces this to be HTMLVideoElement.
         this.audioElem = <HTMLVideoElement>document.createElement("audio");
@@ -516,6 +532,15 @@ class VideoPlayer {
         }
         this.playingState = PlayingState.PAUSED;
         this.controlGroup?.updateForPause();
+
+        if(this.videoElem) {
+            this.videoElem.classList.remove("nodisplay");
+            //this.imageElem.style.display = "none";
+        }
+        if(this.overlayButton) {
+            this.overlayButton.classList.remove("nodisplay");
+            this.overlayButton.classList.add("tw-block");
+        }
 
         const onPause = function(result: any) {
             if(result.autoplay) {
@@ -619,7 +644,7 @@ export class VideoPlayerContainer {
 
     updateVideoPlayerList() {
         // TODO: Is it better to iterate only the mutated divs?
-        const playerElems = document.body.getElementsByClassName(videoPlayerClass);
+        const playerElems = document.getElementsByClassName(videoPlayerClass);
         for(let playerElem of playerElems) {
             // If the div is not already processed
             if(!isProcessed(playerElem)) {
