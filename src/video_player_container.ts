@@ -5,7 +5,7 @@ import { getChannelFromWebUrl, GetUrlsResponse, parseAudioOnlyUrl } from "./url"
 
 // TODO: Any better way than HTML as string?
 const initialButtonDom = `
-<div class="tw-inline-flex tw-relative tw-tooltip-wrapper">
+<div class="tw-inline-flex tw-relative tw-tooltip-wrapper radio-mode-button-wrapper">
     <button class="radio-mode-button tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
             data-a-target="radio-mode-button"
             data-radio-mode-state="disabled"
@@ -53,7 +53,7 @@ const domObserverConfig = { attributes: false, childList: true, subtree: true };
  *   1-2. If div with class "video-player", process it. Check #2
  * 
  * 2. Create VideoPlayer, video-player class div checks for 1 attribute change, 3 subtree changes
- *   2-1. attribute "data-a-player-type": "site", "site_mini", "clips-watch"
+ *   2-1. attribute "data-a-player-type": "site", "site_mini", "clips-watch", "channel_home_carousel"
  *     2-2-2. Change the mode of VideoPlayer if necessary
  *     2-2-3. Mode: Tuple of (layout, video_type).
  *       2-2-3-1. layout: "site" | "site_mini"
@@ -128,7 +128,6 @@ const domObserverConfig = { attributes: false, childList: true, subtree: true };
  * (1) Disable the button when user is not logged in.
  */
 
-
 const enum PlayingState {
     DISABLED = "disabled",
     PAUSED = "paused",
@@ -151,9 +150,11 @@ class ControlGroup {
     playButtonElem: HTMLElement;
     volumeSliderElem: HTMLInputElement;
     radioButton: HTMLElement;
+    tooltipElem: HTMLElement;
     componentsObserver: MutationObserver;
     playButtonObserver: MutationObserver;
-    volumeObserver: MutationObserver; 
+    volumeObserver: MutationObserver;
+
 
     constructor(player: VideoPlayer, controlGroupElem: HTMLElement) {
         this.player = player;
@@ -259,35 +260,58 @@ class ControlGroup {
         buttonWrapperDom.innerHTML = initialButtonDom;
         this.radioButton = buttonWrapperDom.getElementsByTagName("button")[0];
         markProcessed(this.radioButton);
-               
+        
+        // Update radio button state
+        const playingState = this.player.playingState;
         this.radioButton.setAttribute(radioModeStateAttr, this.player.playingState);
         this.radioButton.onclick = this.player.onRadioButtonClicked.bind(this.player);
+
+        this.tooltipElem = buttonWrapperDom.getElementsByClassName("tw-tooltip")?.[0] as HTMLElement;  
+        this.updateTooltipText(playingState);
+
         this.controlGroupElem.appendChild(buttonWrapperDom);
     }
 
     updateForPlay() {
         // NOTE: There is 1~3 seconds of delay between radio-mode button click and sound being played.
         // It's better to show some intermediate state (icon change, mouse cursor change, etc) in the meanwhile
-
-        // Stop the video if playing
-        const videoState = this.playButtonElem?.getAttribute(videoPlayerStateAttr);
-        if(videoState === "playing") {
-            // Is there a better way to pause video than this "click" hack?
-            this.playButtonElem.click();
-        }
         
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.PLAYING);
+        this.radioButton?.setAttribute(radioModeStateAttr, PlayingState.PLAYING);
+        this.updateTooltipText(PlayingState.PLAYING);
     }
 
     updateForPause() {
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.PAUSED);
+        this.radioButton?.setAttribute(radioModeStateAttr, PlayingState.PAUSED);
+        this.updateTooltipText(PlayingState.PAUSED);
     }
 
     updateForDisabled() {
         // Change the radio button icon
-        this.radioButton.setAttribute(radioModeStateAttr, PlayingState.DISABLED);
+        this.radioButton?.setAttribute(radioModeStateAttr, PlayingState.DISABLED);
+        this.updateTooltipText(PlayingState.DISABLED);
+    }
+
+    updateTooltipText(newState: PlayingState) {
+        if(!this.tooltipElem) {
+            return;
+        }
+
+        let text = "Radio mode";
+        if(newState === PlayingState.DISABLED) {
+            text = chrome.i18n.getMessage("RADIO_MODE_DISABLED");
+        }
+        else if(newState === PlayingState.PAUSED) {
+            text = chrome.i18n.getMessage("RADIO_MODE_START");
+        }
+        else if(newState === PlayingState.PLAYING) {
+            text = chrome.i18n.getMessage("RADIO_MODE_END");
+        }
+        else {
+            console.debug("updateTooltipText for state " + newState);
+        }
+        this.tooltipElem.textContent = text;
     }
 
     destroy() {
@@ -300,6 +324,7 @@ class ControlGroup {
         this.playButtonElem  = null;
         this.volumeSliderElem = null;
         this.radioButton = null;
+        this.tooltipElem = null;
         this.componentsObserver = null;
         this.playButtonObserver = null;
         this.volumeObserver = null;
@@ -317,21 +342,27 @@ class VideoPlayer {
     controlGroupObserver: MutationObserver;
     hls: Hls;
     audioElem: HTMLVideoElement;
+    videoElem: HTMLVideoElement;
+    videoElemObserver: MutationObserver;
+
 
     constructor(playerId: string, container: VideoPlayerContainer, playerElem: HTMLElement) {
         this.playerId = playerId;
         this.container = container;
         this.playerElem = playerElem;
-        this.playingState = PlayingState.DISABLED;
+        this.playingState = getChannelFromWebUrl() ? PlayingState.PAUSED : PlayingState.DISABLED;
 
-        this.tryUpdatingControlGroup();
-        this.controlGroupObserver = new MutationObserver(this.tryUpdatingControlGroup.bind(this));
+        this.tryUpdatingComponents();
+        this.controlGroupObserver = new MutationObserver(this.tryUpdatingComponents.bind(this));
         this.controlGroupObserver.observe(this.playerElem, domObserverConfig);
     }
 
-    tryUpdatingControlGroup() {
-        this.updateControlsPerLiveness();
+    tryUpdatingComponents() {
+        this.tryUpdatingControlGroup();
+        this.tryObservingVideoElem();
+    }
 
+    tryUpdatingControlGroup() {
         // Check if the control group DOM is ready
         const controlGroupElem = this.playerElem.getElementsByClassName(controlGroupClass)?.[0];
         if(!controlGroupElem) {  // control group cannot be found in DOM
@@ -350,7 +381,67 @@ class VideoPlayer {
         this.controlGroup = new ControlGroup(this, controlGroupElem as HTMLElement);
     }
 
+    tryObservingVideoElem() {
+        if(!this.videoElemObserver) {
+            const callback: MutationCallback = function(mutations: MutationRecord[]) {
+                for(let mutation of mutations) {
+                    if(mutation.attributeName == "src") {
+                        this.updateStatus();
+                    }
+                }
+            }
+            this.videoElemObserver = new MutationObserver(callback.bind(this));
+        }
+
+        const videoElem = this.playerElem.getElementsByTagName("video")?.[0];
+        if(!videoElem) {
+            this.videoElemObserver?.disconnect();
+            this.videoElem = null;
+            return;
+        }
+
+        if(isProcessed(videoElem)) {
+            return;
+        }
+        this.videoElem = videoElem;
+        markProcessed(this.videoElem);
+    
+        this.videoElemObserver.observe(this.videoElem, attrObserverConfig); 
+    }
+
+    updateStatus() {
+        const channel = getChannelFromWebUrl();
+        if(channel) {
+            this.enable();
+        }
+        else {
+            this.disable();
+        }
+    }
+
+    enable() {
+        const state = this.playingState;
+        if(state === PlayingState.DISABLED) {
+            this.pauseFromDisabled();
+        }
+    }
+
+    disable() {
+        if(this.playingState === PlayingState.DISABLED) {
+            return;
+        }
+        if(this.playingState === PlayingState.PLAYING) {
+            this.pause();
+        }
+        this.playingState = PlayingState.DISABLED;
+        this.controlGroup?.updateForDisabled();
+    }
+
     play(mediaUrl: string) {
+        if(this.playingState !== PlayingState.PAUSED) {
+            return;
+        }
+
         if(!mediaUrl) {
             console.debug("No mediaUrl is found to play")
             return;
@@ -364,7 +455,7 @@ class VideoPlayer {
         // Create a separate <video> element to play audio.
         // <audio> can be also used by hls.js, but Typescript forces this to be HTMLVideoElement.
         this.audioElem = <HTMLVideoElement>document.createElement("audio");
-        this.audioElem.style.display = "none";
+        this.audioElem.classList.add("nodisplay");
         this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
@@ -380,14 +471,29 @@ class VideoPlayer {
         // but for some reason the event is not triggered with typescript+webpack.
         const audioPlayCallback = function() {
             console.log("Play started");
+            this.controlGroup?.updateForPlay();
         }
+        this.controlGroup.radioButton.setAttribute(radioModeStateAttr, "loading");
         this.audioElem.play().then(audioPlayCallback.bind(this));
         this.playingState = PlayingState.PLAYING;
-        this.controlGroup?.updateForPlay();
+        
+        // Stop the video if playing
+        this.pauseVideo();
+        //this.controlGroup?.updateForPlay();
+    }
+
+    pauseFromDisabled() {
+        const state = this.playingState;
+        if(state !== PlayingState.DISABLED) {
+            return;
+        }
+        this.playingState = PlayingState.PAUSED;
+        this.controlGroup?.updateForPause();
     }
 
     pause() {
-        if(this.playingState === PlayingState.PAUSED) {
+        const state = this.playingState;
+        if(state === PlayingState.PAUSED || state === PlayingState.DISABLED) {
             return;
         }
         if(this.hls) {
@@ -410,22 +516,34 @@ class VideoPlayer {
         }
         this.playingState = PlayingState.PAUSED;
         this.controlGroup?.updateForPause();
+
+        const onPause = function(result: any) {
+            if(result.autoplay) {
+                this.playVideo();
+            }
+        }
+        chrome.storage.local.get(['autoplay'], onPause.bind(this));
+    }
+
+    playVideo() {
+        this.toggleVideoStateIf("paused");
+    }
+
+    pauseVideo() {
+        this.toggleVideoStateIf("playing");
+    }
+
+    toggleVideoStateIf(expectedState: string) {
+        const videoPlayButton = this.controlGroup?.playButtonElem;
+        const videoState = videoPlayButton?.getAttribute(videoPlayerStateAttr);
+        if(videoState === expectedState) {
+            videoPlayButton.click();
+        }
     }
 
     // Pause audio in all players
     pauseAll() {
         this.container.pauseExcept(null);
-    }
-
-    disable() {
-        if(this.playingState === PlayingState.DISABLED) {
-            return;
-        }
-        if(this.playingState === PlayingState.PLAYING) {
-            this.pause();
-        }
-        this.playingState = PlayingState.DISABLED;
-        this.controlGroup?.updateForDisabled();
     }
 
     destroy() {  // What else to do here?
@@ -435,8 +553,13 @@ class VideoPlayer {
 
     requestPlay() {
         const channel = getChannelFromWebUrl();
+        if(!channel) {
+            // Currently in a non-channel page. Disable 
+            this.disable();
+            return;
+        }
+
         const responseCallback = async function(response: GetUrlsResponse) {
-            console.debug("response for get_audio_url received: " + JSON.stringify(response));
             if(!response?.webUrl?.channel) {
                 // Currently in a non-channel page. Disable 
                 this.disable();
@@ -458,18 +581,6 @@ class VideoPlayer {
         }
         chrome.runtime.sendMessage(
             {message: "get_audio_url", channel: channel}, responseCallback.bind(this)); 
-    }
-
-    updateControlsPerLiveness() {
-        // If watching a live stream, enable the control group.
-        // If watching VOD of clip, disable the control group.
-        // For now, the logic for checking live/recorded video is existence of time seekbar.
-        const seekbar = this.playerElem.getElementsByClassName("seekbar-interaction-area")?.[0];
-
-        // When seekbar appeared and the radio button is not disabled yet.
-        if(seekbar && this.playingState !== PlayingState.DISABLED) {
-            this.disable();
-        }
     }
 
     onRadioButtonClicked() {

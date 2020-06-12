@@ -1,0 +1,34 @@
+{
+    "EXT_NAME": {
+        "message": "트위치 라디오 모드",
+        "description": "확장 프로그램 이름"
+    },
+    "EXT_DESCRIPTION": {
+        "message": "웹브라우저에서 트위치 라디오 모드를 가능하게 해주는 확장 프로그램",
+        "description": "확장 프로그램 설명"
+    },
+    "RADIO_MODE_START": {
+        "message": "라디오 모드 시작하기",
+        "description": "라디오 모드가 일시중지되었거나 아직 시작하지 않았을때의 툴팁"
+    },
+    "RADIO_MODE_DISABLED": {
+        "message": "라디오 모드는 스트리머의 채널에서 생방송 중일때만 가능합니다",
+        "description": "라디오모드 버튼이 비활성화되었을 때의 툴팁"
+    },
+    "RADIO_MODE_END": {
+        "message": "라디오 모드 종료하기",
+        "description": "라디오 모드가 실행중일 때의 툴팁"
+    },
+    "AUTOPLAY_VIDEO_ON_RADIO_END": {
+        "message": "라디오 모드 종료 시 자동으로 영상 재생",
+        "description": "팝업 설정에서 사용하는 설정 내용"
+    },
+    "POPUP_EXT_NAME": {
+        "message": "트위치 라디오 모드 v0.1.0",
+        "description": "팝업창에 나타날 앱 이름"
+    },
+    "EXT_CONFIG_HEADER": {
+        "message": "설정",
+        "description": "팝업 설정 부분의 이름"
+    }
+}

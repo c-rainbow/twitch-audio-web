@@ -1,0 +1,42 @@
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <link rel="stylesheet" href="popup.css"/>
+      <script src="popup.js"></script>
+    </head>
+    <body>
+      <div class="extension-logo">
+        <img id="extension-logo" src="icon_48w.png"/>
+      </div>
+      <div class="extension-title">
+        <h2 id="extension-title-text">Twitch Radio Mode v0.1.0</h2>
+      </div>
+      <div class="extension-config">
+        <h4 id="extension-config-header">Configs</h4>
+        <div class="config-item">
+          <span class="config-name" id="config-name-autoplay">
+            Autoplay video when radio mode ends
+          </span>
+          <span class="config-switch">
+          <label class="switch">
+            <input type="checkbox" id="autoplay-checkbox">
+            <span class="slider round"></span>
+          </label>
+          </span>
+        </div>
+      </div>
+    </body>
+  </html>
+
+
+  <!--
+
+팝업에 들어갈 것:
+.....1. 로고
+2. 현재 URL에 있는 채널 비디오/오디오 주소 (사용자가 복사해서 가져갈 수 있게)
+3. 설정: 라디오 재생 중에 라디오 버튼을 한번 더 누르면 라디오만 꺼지기 or 비디오가 자동재생되기 선택
+4. 그 외 각종 설정: (기본 버퍼 사이즈)?
+
+
+
+  -->
