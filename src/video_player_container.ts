@@ -23,7 +23,7 @@ const initialButtonDom = `
         </div>
     </button>
     <div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip">
-        
+        Radio mode
     </div>
 </div>
 `;

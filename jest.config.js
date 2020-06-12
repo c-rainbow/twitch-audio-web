@@ -1,8 +1,16 @@
+const {defaults} = require('jest-config');
+
 module.exports = {
-   roots: ['<rootDir>/tests'],
-   transform: {
-     '^.+\\.tsx?$': 'ts-jest',
-   },
-   testRegex: '(/tests/.*|(\\.|/)(test|spec))\\.[jt]sx?$',
-   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
- }
+  roots: ['<rootDir>'],
+  transform: {
+    "^.+\\.jsx?$": "babel-jest",
+    '^.+\\.tsx?$': 'ts-jest',
+    "^.+\\.html?$": "html-loader-jest"
+  },
+  testRegex: '(./tests/).*_test.[jt]sx?$',
+  moduleFileExtensions: [...defaults.moduleFileExtensions, 'ts', 'tsx'],
+  verbose: true,
+  automock: false,
+  preset: 'ts-jest',
+  setupFiles: ["./tests/setupJest.js", "jest-webextension-mock"]
+}
