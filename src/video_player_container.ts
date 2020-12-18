@@ -5,7 +5,7 @@ import { getChannelFromWebUrl, GetUrlsResponse, parseAudioOnlyUrl } from "./url"
 
 // TODO: Any better way than HTML as string?
 const initialButtonDom = `
-<div class="tw-inline-flex tw-relative tw-tooltip-wrapper radio-mode-button-wrapper">
+<div class="tw-inline-flex tw-relative tw-tooltip__container radio-mode-button-wrapper">
     <button class="radio-mode-button tw-align-items-center tw-align-middle tw-border-bottom-left-radius-medium tw-border-bottom-right-radius-medium tw-border-top-left-radius-medium tw-border-top-right-radius-medium tw-button-icon tw-button-icon--overlay tw-core-button tw-core-button--overlay tw-inline-flex tw-interactive tw-justify-content-center tw-overflow-hidden tw-relative"
             data-a-target="radio-mode-button"
             data-radio-mode-state="disabled"
