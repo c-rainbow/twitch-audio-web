@@ -12,7 +12,7 @@
         "description": "Tooltip text when radio button is paused"
     },
     "RADIO_MODE_DISABLED": {
-        "message": "Radio mode can only be used in live stream in channel page",
+        "message": "Radio mode can only be used in live stream in channel page. Please refresh the page if this was unexpected.",
         "description": "Tooltip text when radio button is disabled"
     },
     "RADIO_MODE_END": {
