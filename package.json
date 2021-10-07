@@ -18,23 +18,24 @@
     "url": "https://github.com/c-rainbow/twitch-audio-web/issues"
   },
   "homepage": "https://github.com/c-rainbow/twitch-audio-web#readme",
-  "dependencies": {},
   "devDependencies": {
-    "@types/chrome": "0.0.134",
-    "@types/hls.js": "^0.13.3",
-    "@types/jest": "^26.0.22",
-    "css-loader": "^5.2.0",
+    "@types/chrome": "0.0.158",
+    "@types/jest": "^27.0.2",
+    "css-loader": "^6.3.0",
+    "hls.js": "^1.0.11",
     "html-loader-jest": "^0.2.1",
-    "jest": "^26.6.3",
+    "jest": "^27.2.4",
     "jest-fetch-mock": "^3.0.3",
-    "jest-webextension-mock": "^3.7.8",
-    "jsdom": "^16.5.2",
+    "jest-webextension-mock": "^3.7.19",
+    "jsdom": "^17.0.0",
     "mutation-observer": "^1.0.3",
-    "selenium-webdriver": "^4.0.0-beta.2",
-    "style-loader": "^2.0.0",
-    "ts-jest": "^26.5.4",
-    "ts-loader": "^8.1.0",
-    "typescript": "^4.2.3"
+    "selenium-webdriver": "^4.0.0-rc-2",
+    "style-loader": "^3.3.0",
+    "ts-jest": "^27.0.5",
+    "ts-loader": "^9.2.6",
+    "typescript": "^4.4.3",
+    "webpack": "^5.58.0",
+    "webpack-cli": "^4.9.0"
   },
   "main": "webpack.config.js"
 }
