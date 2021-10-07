@@ -1,0 +1,30 @@
+The extension runs Twitch radio mode in Chrome. Saves network bandwidth, RAM, and other device resources.
+
+"Radio mode" is a feature in Twitch mobile app, with which users can play only the sound of the stream, instead of playing the full video. The feature is useful for radio or music streams.
+
+After installation, there will be a new "radio" button in control panel of the video. Radio mode can be started/stopped by a single click of this button, and users can engage in the chat just like when they play video streams.
+
+NOTE: If you have any issues using the radio mode button, please refresh the webpage and try again.
+
+The original source code can be found at: https://github.com/c-rainbow/twitch-audio-web
+
+
+Release notes
+v0.3.1 (2021-05-17)
+- Hotfix: Twitch's CSS change exposed tooltip text when the radio mode button is not on hover state. Temporarily removed all tooltip messages
+
+v0.3.0 (2021-04-04)
+- Updated all dependencies to the latest version
+- Added a message to ask users to refresh the page in case of unexpected error
+
+v0.2.0 (2020-12-18)
+- Bugfix: Twitch recently updated CSS which caused the icon background white/black, not transparent
+
+v0.1.0 (2020-06-12)
+- In popup, a new config "Autoplay video when radio mode ends" is added
+- Minor UX improvement (different tooltip messages per status)
+- I18n support (English, Korean so far)
+- Miscellaneous bugfixes
+
+v0.0.3
+- Prototype
