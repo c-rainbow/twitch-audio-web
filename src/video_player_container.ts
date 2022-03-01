@@ -23,7 +23,7 @@ const initialButtonDom = `
             </span>
         </div>
     </button>
-    <div class="tw-tooltip tw-tooltip--align-left tw-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip">
+    <div class="radio-tooltip radio-tooltip--align-left radio-tooltip--up" data-a-target="tw-tooltip-label" role="tooltip" direction="top">
         Radio mode
     </div>
 </div>
@@ -461,11 +461,14 @@ class VideoPlayer {
         this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
-            //debug: true,
-            liveSyncDuration: 0,
-            liveMaxLatencyDuration: 5,
-            lowLatencyMode: true,
-            liveDurationInfinity: true  // true for live stream
+            debug: true,
+            //backBufferLength: 1,
+            //maxLoadingDelay: 2,
+            //maxMaxBufferLength: 5,
+            //liveSyncDuration: 5,
+            //liveMaxLatencyDuration: 10,
+            //lowLatencyMode: false,
+            //liveDurationInfinity: true  // true for live stream
         });
         this.hls.loadSource(mediaUrl);
         this.hls.attachMedia(this.audioElem); 

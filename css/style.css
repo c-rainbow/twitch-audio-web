@@ -3,6 +3,11 @@
     display: none !important;
 }
 
+button.radio-mode-button {
+    border: 3px solid rgb(0, 0, 0, 0);
+    padding: 0 5px;
+}
+
 button.radio-mode-button[data-radio-mode-state="unknown"] {
     display: none !important;
 }
@@ -25,5 +30,37 @@ button.radio-mode-button[data-radio-mode-state="disabled"] svg {
 }
 
 button.radio-mode-button[data-radio-mode-state="disabled"]:hover {
-    cursor: default;
+    cursor: not-allowed;
+}
+
+.radio-mode-button-wrapper .radio-tooltip {
+    user-select: none;
+	
+    background-color: var(--color-background-tooltip);
+	border-radius: var(--border-radius-medium);
+	color: var(--color-text-tooltip);
+
+	font-size: var(--font-size-6);
+	font-weight: var(--font-weight-semibold);
+	line-height: var(--line-height-heading);
+    
+	display: none;
+	position: absolute;
+	text-align: left;
+
+	padding: 3px 6px;
+	pointer-events: none;
+	white-space: nowrap;
+	z-index: var(--z-index-balloon);
+}
+
+.radio-mode-button-wrapper:hover .radio-tooltip {
+    display: block;
+}
+
+.radio-mode-button-wrapper .radio-tooltip--up {
+    bottom: 100%;
+    /*left: 0;*/
+    margin-bottom: 3px;
+    top: auto;
 }
