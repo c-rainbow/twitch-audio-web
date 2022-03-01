@@ -98,15 +98,21 @@ export async function fetchUsherUrl(channel: string, tokenUrl: string, lastReque
 
 export async function tryFetchingPlaylist(channel: string, group: UrlGroup) : Promise<string> {
     if(!group) {
+        console.debug('URL group does not exist');
         return null;
     }
  
     // see if the existing usher url can be used
     if(group.usherUrl) {
+        console.debug('Usher URL exists');
         const respText = await fetchContent(group.usherUrl);
         if(respText) {
+            console.debug('URL group does not exist');
             return respText;
         }
+    }
+    else {
+        console.debug('Usher url cache does not exist');
     }
 
     // If usher URL was not cached or is expired, make a GQL call and get a new one
@@ -132,5 +138,6 @@ export async function tryFetchingPlaylist(channel: string, group: UrlGroup) : Pr
 
     const newUsherUrl = buildUsherUrl(group.channel, token, sig);
     const respText = await fetchContent(newUsherUrl.getUrl());
+    console.debug('Final response text', respText);
     return respText;
 }

@@ -19,7 +19,7 @@ function getUrlGroup(channel: string) : UrlGroup {
     const cachedUsherUrlObj = usherUrlMap.get(channel);
     if(cachedUsherUrlObj) {
         // TODO: Temporarily disable cache
-        // group.usherUrl = cachedUsherUrlObj.getUnexpiredUrl();
+        group.usherUrl = cachedUsherUrlObj.getUnexpiredUrl();
     }
     else {
         console.debug(`No cached usherUrl object for channel ${channel}`);
