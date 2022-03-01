@@ -1,6 +1,9 @@
 
-import { buildUsherUrl, parseAudioOnlyUrl, UrlGroup } from "./url";
+import { buildUsherUrl, parseAudioOnlyUrl, UrlGroup, gqlUrl } from "./url";
+import { AccessTokenGqlPayload } from "./accessToken";
 
+// TODO: Fill with Twitch client ID
+const twitchClientId = '';
 
 export async function fetchContent(url: string) {
     if(!url) {
@@ -34,9 +37,33 @@ export async function fetchJson(url: string) {
 }
 
 
+export async function fetchGql(url: string, header: any, body: string) {
+    try {
+        const startTime = Date.now();
+        const postResponse = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Client-ID": twitchClientId,
+                "Content-Type": "text/plain; charset=UTF-8"
+            },
+            body
+        });
+        const respJson = await postResponse.json();
+        console.log("respJson:" + JSON.stringify(respJson));
+        console.debug("fetchGql took" + (Date.now() - startTime) + "ms");
+        return respJson;
+    }
+    catch(err) {
+        console.debug(`fetchGql threw an error: ${err}`);
+    }
+}
+
+
 export async function fetchAudioStreamUrl(usherUrl: string) : Promise<string> {
+    const startTime = Date.now();
     const content = await fetchContent(usherUrl);
     const streamUrl = parseAudioOnlyUrl(content);
+    console.debug("fetchAudioStreamUrl took" + (Date.now() - startTime) + "ms");
     return streamUrl;
 }
 
@@ -69,7 +96,7 @@ export async function fetchUsherUrl(channel: string, tokenUrl: string, lastReque
 }
 
 
-export async function tryFetchingPlaylist(group: UrlGroup) : Promise<string> {
+export async function tryFetchingPlaylist(channel: string, group: UrlGroup) : Promise<string> {
     if(!group) {
         return null;
     }
@@ -82,14 +109,23 @@ export async function tryFetchingPlaylist(group: UrlGroup) : Promise<string> {
         }
     }
 
-    if(!group.accessTokenUrl) {
+    // If usher URL was not cached or is expired, make a GQL call and get a new one
+    const tokenGqlPayload : any = Object.assign({}, AccessTokenGqlPayload);
+    tokenGqlPayload['variables']['login'] = channel;
+
+    console.debug("Token GQL payload: ", tokenGqlPayload);
+
+    const gqlResponseJson = await fetchGql(gqlUrl, {}, JSON.stringify(tokenGqlPayload));
+    console.debug("gqlResponseJson", gqlResponseJson);
+
+    if(!gqlResponseJson) {
         return null;
     }
 
     // Get new token and sig from access token URL
-    const respJson = await fetchJson(group.accessTokenUrl);
-    const token = respJson?.token as string;
-    const sig = respJson?.sig as string;
+    const dataJson = gqlResponseJson?.data?.streamPlaybackAccessToken;
+    const token = dataJson?.value as string;
+    const sig = dataJson?.signature as string;
     if(!token || ! sig) {
         return null;
     }

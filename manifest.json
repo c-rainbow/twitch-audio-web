@@ -28,7 +28,7 @@
                 "*://*.twitch.tv/*"
             ],
             "css": ["./css/style.css"],
-            "js": ["./include/hls.js/hls.js", "./dist/contentscript.js"]
+            "js": ["./dist/contentscript.js"]
         }
     ]
 }
