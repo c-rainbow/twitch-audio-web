@@ -6,6 +6,7 @@ const nonChannels : string[] = [
 
 const apiDomain : string = "api.twitch.tv/api/channels/";
 const accessToken : string = "/access_token";
+export const gqlUrl : string = "https://gql.twitch.tv/gql"
 
 const usherDomain : string = "usher.ttvnw.net/api/channel/hls/";
 const usherExt : string = ".m3u8";
@@ -97,13 +98,11 @@ export function buildUsherUrl(channel: string, token: string, sig: string) : Ush
 // to request/respond access token URL and usher URL for a channel.
 export interface GetUrlsResponse {
     webUrl: UrlGroup;
-    lastRequested: UrlGroup;
 }
 
 
 export interface UrlGroup {
     channel: string;
-    accessTokenUrl: string;
     usherUrl: string;
 }
 

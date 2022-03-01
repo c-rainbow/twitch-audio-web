@@ -1,6 +1,7 @@
 
 import { tryFetchingPlaylist } from "./fetch";
 import { getChannelFromWebUrl, GetUrlsResponse, parseAudioOnlyUrl } from "./url";
+import Hls from "hls.js";
 
 
 // TODO: Any better way than HTML as string?
@@ -341,7 +342,7 @@ class VideoPlayer {
     controlGroup: ControlGroup;
     controlGroupObserver: MutationObserver;
     hls: Hls;
-    audioElem: HTMLVideoElement;
+    audioElem: HTMLAudioElement;
     videoElem: HTMLVideoElement;
     videoElemObserver: MutationObserver;
 
@@ -454,7 +455,8 @@ class VideoPlayer {
 
         // Create a separate <video> element to play audio.
         // <audio> can be also used by hls.js, but Typescript forces this to be HTMLVideoElement.
-        this.audioElem = <HTMLVideoElement>document.createElement("audio");
+        const startTime = Date.now();
+        this.audioElem = document.createElement("audio");
         this.audioElem.classList.add("nodisplay");
         this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
@@ -462,6 +464,7 @@ class VideoPlayer {
             //debug: true,
             liveSyncDuration: 0,
             liveMaxLatencyDuration: 5,
+            lowLatencyMode: true,
             liveDurationInfinity: true  // true for live stream
         });
         this.hls.loadSource(mediaUrl);
@@ -472,6 +475,7 @@ class VideoPlayer {
         const audioPlayCallback = function() {
             console.log("Play started");
             this.controlGroup?.updateForPlay();
+            console.debug('Time to start playing:', Date.now() - startTime, 'ms');
         }
         this.controlGroup.radioButton.setAttribute(radioModeStateAttr, "loading");
         this.audioElem.play().then(audioPlayCallback.bind(this));
@@ -566,7 +570,8 @@ class VideoPlayer {
                 return;
             }
 
-            let playlist = await tryFetchingPlaylist(response.webUrl);
+            const startTime = Date.now();
+            let playlist = await tryFetchingPlaylist(channel, response.webUrl);
             if(!playlist) {
                 // Offline or hosting another channel. Disable 
                 this.disable();

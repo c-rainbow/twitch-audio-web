@@ -1,6 +1,5 @@
 
 import {
-    getChannelFromTokenUrl,
     getChannelFromUsherUrl,
     GetUrlsResponse,
     UrlGroup,
@@ -8,30 +7,19 @@ import {
 } from "./url";
 
 
-// Map of channel(string) to url(string)
-var accessTokenUrlMap: Map<string, string> = new Map();
 // Map of channel(string) to url(UsherUrl)
 var usherUrlMap: Map<string, UsherUrl> = new Map();
-// Last requested usher URL by tab. Needed to detect main page or hosted channel
-var lastRequstedChannelByTab: Map<number, string> = new Map();
+var clientIdMap: Map<string, string> = new Map();
 
 
 function getUrlGroup(channel: string) : UrlGroup {
-    const group : UrlGroup = {channel: channel, accessTokenUrl: null, usherUrl: null};
-    
-    // Get Access Token URL
-    const tokenUrl = accessTokenUrlMap.get(channel);
-    if(tokenUrl) {
-        group.accessTokenUrl = tokenUrl;
-    }
-    else {
-        console.debug("Access token URL is not found for channel " + channel);
-    }
+    const group : UrlGroup = {channel: channel, usherUrl: null};
 
     // Get Usher URL
     const cachedUsherUrlObj = usherUrlMap.get(channel);
     if(cachedUsherUrlObj) {
-        group.usherUrl = cachedUsherUrlObj.getUnexpiredUrl();
+        // TODO: Temporarily disable cache
+        // group.usherUrl = cachedUsherUrlObj.getUnexpiredUrl();
     }
     else {
         console.debug(`No cached usherUrl object for channel ${channel}`);
@@ -42,11 +30,8 @@ function getUrlGroup(channel: string) : UrlGroup {
 
 
 function handleGetUrlsMessage(channel: string, tabId: number) : GetUrlsResponse {
-    const callbackObj: GetUrlsResponse = {webUrl: null, lastRequested: null};
+    const callbackObj: GetUrlsResponse = {webUrl: null};
     callbackObj.webUrl = getUrlGroup(channel);
-
-    const lastRequstedChannel = lastRequstedChannelByTab.get(tabId) ?? null;
-    callbackObj.lastRequested = getUrlGroup(lastRequstedChannel);
 
     return callbackObj;
 }
@@ -70,24 +55,29 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 
-chrome.webRequest.onBeforeRequest.addListener(function(details) {
-        console.log("Token request: " + details.url)
-        const channel = getChannelFromTokenUrl(details.url);
-        if(channel) {
-            accessTokenUrlMap.set(channel, details.url);
+chrome.webRequest.onSendHeaders.addListener(function(details) {
+        const headers = details.requestHeaders || [];
+        if (clientIdMap.has("Client-ID")) {
+          return;
+        }
+        console.log("Header length: " + headers.length);
+        for(const header of headers) {
+            if("Client-ID" === header.name) {
+                clientIdMap.set("Client-ID", header.value);
+                console.log("Client-ID saved in client map");
+            }
         }
     },
-    {urls: ["*://api.twitch.tv/api/channels/*/access_token*"]}
+    {urls: ["*://gql.twitch.tv/gql/*"]},
+    ["requestHeaders"]
 );
 
 
 chrome.webRequest.onBeforeRequest.addListener(function(details) {
-        console.log("tabId: " + details.tabId);
-        console.log("Usher request: " + details.url);
         const channel = getChannelFromUsherUrl(details.url);
         const usherUrlObj = new UsherUrl(details.url);
         usherUrlMap.set(channel, usherUrlObj);
-        lastRequstedChannelByTab.set(details.tabId, channel);
+        // lastRequstedChannelByTab.set(details.tabId, channel);
     },
     {urls: ["*://usher.ttvnw.net/*"]}
 );
