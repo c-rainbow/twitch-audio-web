@@ -37,8 +37,8 @@ const videoPlayerStateAttr = "data-a-player-state";
 const radioModeStateAttr = "data-radio-mode-state";
 const playerIdAttr = "data-radio-mode-player-id";
 
-const videoPlayerClass = "video-player";
-const videoPlayerProcessedClass = "video-player-processed";
+const videoPlayerClass = "video-ref";
+const videoPlayerProcessedClass = "video-ref-processed";
 const videoPlayerIdPrefix = videoPlayerProcessedClass + "-";
 const controlGroupClass = "player-controls__left-control-group";
 const playButtonAttr = "button[data-a-target='player-play-pause-button']";
@@ -51,9 +51,9 @@ const domObserverConfig = { attributes: false, childList: true, subtree: true };
 /**
  * Create VideoPlayerContainer, add MutationObserver to 
  * 1. document.body checks for one subtree change
- *   1-2. If div with class "video-player", process it. Check #2
+ *   1-2. If div with class "video-ref", process it. Check #2
  * 
- * 2. Create VideoPlayer, video-player class div checks for 1 attribute change, 3 subtree changes
+ * 2. Create VideoPlayer, video-ref class div checks for 1 attribute change, 3 subtree changes
  *   2-1. attribute "data-a-player-type": "site", "site_mini", "clips-watch", "channel_home_carousel"
  *     2-2-2. Change the mode of VideoPlayer if necessary
  *     2-2-3. Mode: Tuple of (layout, video_type).
@@ -462,13 +462,13 @@ class VideoPlayer {
         this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
             debug: true,
-            //backBufferLength: 1,
-            //maxLoadingDelay: 2,
-            //maxMaxBufferLength: 5,
-            //liveSyncDuration: 5,
-            //liveMaxLatencyDuration: 10,
-            //lowLatencyMode: false,
-            //liveDurationInfinity: true  // true for live stream
+            // backBufferLength: 1,
+            // maxLoadingDelay: 2,
+            // maxMaxBufferLength: 5,
+            liveSyncDuration: 0,
+            liveMaxLatencyDuration: 5,
+            lowLatencyMode: true,
+            liveDurationInfinity: true  // true for live stream
         });
         this.hls.loadSource(mediaUrl);
         this.hls.attachMedia(this.audioElem); 
