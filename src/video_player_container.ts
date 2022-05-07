@@ -267,7 +267,7 @@ class ControlGroup {
         this.radioButton.setAttribute(radioModeStateAttr, this.player.playingState);
         this.radioButton.onclick = this.player.onRadioButtonClicked.bind(this.player);
 
-        this.tooltipElem = buttonWrapperDom.getElementsByClassName("tw-tooltip")?.[0] as HTMLElement;  
+        this.tooltipElem = buttonWrapperDom.getElementsByClassName("radio-tooltip")?.[0] as HTMLElement;  
         this.updateTooltipText(playingState);
 
         this.controlGroupElem.appendChild(buttonWrapperDom);
@@ -466,7 +466,7 @@ class VideoPlayer {
             // maxLoadingDelay: 2,
             // maxMaxBufferLength: 5,
             liveSyncDuration: 0,
-            liveMaxLatencyDuration: 5,
+            liveMaxLatencyDuration: 10,
             lowLatencyMode: true,
             liveDurationInfinity: true  // true for live stream
         });
