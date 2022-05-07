@@ -37,21 +37,21 @@ button.radio-mode-button[data-radio-mode-state="disabled"]:hover {
     user-select: none;
 	
     background-color: var(--color-background-tooltip);
-	border-radius: var(--border-radius-medium);
-	color: var(--color-text-tooltip);
+    border-radius: var(--border-radius-medium);
+    color: var(--color-text-tooltip);
 
-	font-size: var(--font-size-6);
-	font-weight: var(--font-weight-semibold);
-	line-height: var(--line-height-heading);
-    
-	display: none;
-	position: absolute;
-	text-align: left;
+    font-size: var(--font-size-6);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-heading);
+      
+    display: none;
+    position: absolute;
+    text-align: left;
 
-	padding: 3px 6px;
-	pointer-events: none;
-	white-space: nowrap;
-	z-index: var(--z-index-balloon);
+    padding: 3px 6px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: var(--z-index-balloon);
 }
 
 .radio-mode-button-wrapper:hover .radio-tooltip {
