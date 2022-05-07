@@ -35,7 +35,7 @@
 웹팩으로 빌드 시 dist/background.js 와 dist/contentscript.js 파일이 업데이트됩니다.
 
 ```
-> webpack
+> npm run build
 ```
 
 컴파일된 코드를 크롬 브라우저에서 설치해 주세요.
