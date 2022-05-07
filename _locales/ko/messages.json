@@ -8,15 +8,15 @@
         "description": "확장 프로그램 설명"
     },
     "RADIO_MODE_START": {
-        "message": "",
+        "message": "라디오 모드 시작",
         "description": "라디오 모드가 일시중지되었거나 아직 시작하지 않았을때의 툴팁"
     },
     "RADIO_MODE_DISABLED": {
-        "message": "",
+        "message": "라디오 모드는 생방송 중일때만 가능합니다. 문제가 있다면 페이지를 새로고침 해주세요",
         "description": "라디오모드 버튼이 비활성화되었을 때의 툴팁"
     },
     "RADIO_MODE_END": {
-        "message": "",
+        "message": "라디오 모드 종료",
         "description": "라디오 모드가 실행중일 때의 툴팁"
     },
     "AUTOPLAY_VIDEO_ON_RADIO_END": {
