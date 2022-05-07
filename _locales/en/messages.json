@@ -8,15 +8,15 @@
         "description": "Extension description"
     },
     "RADIO_MODE_START": {
-        "message": "",
+        "message": "Start radio mode",
         "description": "Tooltip text when radio button is paused"
     },
     "RADIO_MODE_DISABLED": {
-        "message": "",
+        "message": "Radio mode can be used only in livestream. Please refresh the page if any issues.",
         "description": "Tooltip text when radio button is disabled"
     },
     "RADIO_MODE_END": {
-        "message": "",
+        "message": "Stop radio mode",
         "description": "Tooltip text when audio is being played in radio mode"
     },
     "AUTOPLAY_VIDEO_ON_RADIO_END": {
