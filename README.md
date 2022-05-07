@@ -48,7 +48,7 @@ Please install webpack and other dependencies for the project.
 After you build the project, two files (dist/background.js, dist/conentscript.js) will be updated with the current TypeScript code.
 
 ```
-> webpack
+> npm run build
 ```
 
 Load the extension in Chrome browser as instructed in _Install_ section.

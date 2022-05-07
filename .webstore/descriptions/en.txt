@@ -10,6 +10,12 @@ The original source code can be found at: https://github.com/c-rainbow/twitch-au
 
 
 Release notes
+v0.4.0 (2022-05-07)
+- Hotfix: Twitch's DOM change made the radio mode button invisible
+- Tooltip messages are back
+- Added a tooltip message to refresh the page in case of any issues
+- Updated all dependencies
+
 v0.3.1 (2021-05-17)
 - Hotfix: Twitch's CSS change exposed tooltip text when the radio mode button is not on hover state. Temporarily removed all tooltip messages
 
