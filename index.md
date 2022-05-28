@@ -1,13 +1,6 @@
 # Twitch Radio Mode Chrome Extension
 
-
-Hello from gh-pages branch, index.md
-
-
-This extension for Google Chrome browser lets users play the stream in radio mode.
-
-Korean version of README can be found [here](https://github.com/c-rainbow/twitch-audio-web/blob/master/readme/README.ko.md).
-한국어 설명서는 [여기](https://github.com/c-rainbow/twitch-audio-web/blob/master/readme/README.ko.md)로
+Thanks for installing Twitch Radio Mode browser extension. This extension for web browser lets users play the stream in radio mode.
 
 ## Use
 
@@ -24,35 +17,23 @@ The volume can be adjusted in the same way as the video, using the same volume s
 If you want to pause, just click the radio icon one more time. The audio will automatically stop if the video is played.
 
 
-
 ## Install
 
 The extension can be installed in [Chrome Web Store](https://chrome.google.com/webstore/detail/twitch-radio-mode/dbojkfdnamfipdnlknbpjphemjnldeoo)
 
-If you want to download the source code yourself, please follow the steps below, or follow the official installation instruction which can be found [here](https://developer.chrome.com/extensions/getstarted).
 
-1. Download or clone the code, and unzip the file
-2. In Google Chrome, go to chrome://extensions
-3. On the top right, enable "Developer Mode"
-4. Click "Load Unpacked", locate the unzipped directory.
+## Frequently Asked Questions
 
-The code comes with pre-built Javascript code which can be readily used as an extension.
+#### Can I use this extension in a recorded video, like past broadcasts, highlights, clips, etc?
+This extension only works for a livestream.
 
+#### Can I collect channel points with this extension?
+No, you cannot collect channel points if the video is not played.
 
-## Develop
+#### I cannot use radio mode in the main page.
+For now, the extension only works in the streamer's channel page.
 
-The extension is created with TypeScript and uses Webpack to build the code.
+#### The radio mode button is disabled when I clicked it.
+I apologize for the error. Unfortunately, the only workaround I know is to refresh the page.
 
-Please install webpack and other dependencies for the project.
-
-```
-> npm i
-```
-
-After you build the project, two files (dist/background.js, dist/conentscript.js) will be updated with the current TypeScript code.
-
-```
-> npm run build
-```
-
-Load the extension in Chrome browser as instructed in _Install_ section.
+This is a known issue and I could not find a solution yet. It happens when you click the button 20 minutes after the stream is loaded.
