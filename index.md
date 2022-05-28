@@ -1,7 +1,7 @@
 # Twitch Radio Mode Chrome Extension
 
 
-Hello from gh-pages branch
+Hello from gh-pages branch, index.md
 
 
 This extension for Google Chrome browser lets users play the stream in radio mode.
