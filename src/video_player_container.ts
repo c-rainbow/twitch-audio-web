@@ -1,6 +1,6 @@
 
 import { tryFetchingPlaylist } from "./fetch";
-import { getChannelFromWebUrl, GetUrlsResponse, parseAudioOnlyUrl } from "./url";
+import { getChannelFromWebUrl, parseAudioOnlyUrl } from "./url";
 import Hls from "hls.js";
 
 
@@ -562,7 +562,7 @@ class VideoPlayer {
         this.controlGroup?.destroy();
     }
 
-    requestPlay() {
+    async requestPlay() {
         const channel = getChannelFromWebUrl();
         if(!channel) {
             // Currently in a non-channel page. Disable 
@@ -570,29 +570,18 @@ class VideoPlayer {
             return;
         }
 
-        const responseCallback = async function(response: GetUrlsResponse) {
-            if(!response?.webUrl?.channel) {
-                // Currently in a non-channel page. Disable 
-                this.disable();
-                return;
-            }
-
-            const startTime = Date.now();
-            let playlist = await tryFetchingPlaylist(channel, response.webUrl);
-            if(!playlist) {
-                // Offline or hosting another channel. Disable 
-                this.disable();
-                return;
-            }
-        
-            const audioStreamUrl = parseAudioOnlyUrl(playlist);
-            if(audioStreamUrl) {
-                this.container.pauseExcept(this.playerId);
-                this.play(audioStreamUrl);
-            }
+        const playlist = await tryFetchingPlaylist(channel);
+        if(!playlist) {
+            // Offline or hosting another channel. Disable 
+            this.disable();
+            return;
         }
-        chrome.runtime.sendMessage(
-            {message: "get_audio_url", channel: channel}, responseCallback.bind(this)); 
+    
+        const audioStreamUrl = parseAudioOnlyUrl(playlist);
+        if(audioStreamUrl) {
+            this.container.pauseExcept(this.playerId);
+            this.play(audioStreamUrl);
+        }
     }
 
     onRadioButtonClicked() {

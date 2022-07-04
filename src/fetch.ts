@@ -1,9 +1,8 @@
 
 import { buildUsherUrl, parseAudioOnlyUrl, UrlGroup, gqlUrl } from "./url";
 import { AccessTokenGqlPayload } from "./accessToken";
+import { getTwitchClientId } from "./clientIdManager";
 
-// TODO: Fill with Twitch client ID
-const twitchClientId = '';
 
 export async function fetchContent(url: string) {
     if(!url) {
@@ -40,6 +39,7 @@ export async function fetchJson(url: string) {
 export async function fetchGql(url: string, header: any, body: string) {
     try {
         const startTime = Date.now();
+        const twitchClientId = await getTwitchClientId();
         const postResponse = await fetch(url, {
             method: "POST",
             headers: {
@@ -49,8 +49,7 @@ export async function fetchGql(url: string, header: any, body: string) {
             body
         });
         const respJson = await postResponse.json();
-        console.log("respJson:" + JSON.stringify(respJson));
-        console.debug("fetchGql took" + (Date.now() - startTime) + "ms");
+        console.debug("respJson:" + JSON.stringify(respJson));
         return respJson;
     }
     catch(err) {
@@ -96,33 +95,17 @@ export async function fetchUsherUrl(channel: string, tokenUrl: string, lastReque
 }
 
 
-export async function tryFetchingPlaylist(channel: string, group: UrlGroup) : Promise<string> {
-    if(!group) {
-        console.debug('URL group does not exist');
-        return null;
-    }
- 
-    // see if the existing usher url can be used
-    if(group.usherUrl) {
-        console.debug('Usher URL exists');
-        const respText = await fetchContent(group.usherUrl);
-        if(respText) {
-            console.debug('URL group does not exist');
-            return respText;
-        }
-    }
-    else {
-        console.debug('Usher url cache does not exist');
-    }
+export async function tryFetchingPlaylist(channel: string) : Promise<string> {
 
     // If usher URL was not cached or is expired, make a GQL call and get a new one
     const tokenGqlPayload : any = Object.assign({}, AccessTokenGqlPayload);
     tokenGqlPayload['variables']['login'] = channel;
 
     console.debug("Token GQL payload: ", tokenGqlPayload);
+    const clientId = await getTwitchClientId();
 
     const gqlResponseJson = await fetchGql(gqlUrl, {
-      "Client-ID": twitchClientId,
+      "Client-ID": clientId,
     }, JSON.stringify(tokenGqlPayload));
     console.debug("gqlResponseJson", gqlResponseJson);
 
@@ -138,7 +121,7 @@ export async function tryFetchingPlaylist(channel: string, group: UrlGroup) : Pr
         return null;
     }
 
-    const newUsherUrl = buildUsherUrl(group.channel, token, sig);
+    const newUsherUrl = buildUsherUrl(channel, token, sig);
     const respText = await fetchContent(newUsherUrl.getUrl());
     console.debug('Final response text', respText);
     return respText;
