@@ -12,10 +12,6 @@ const nonChannels: string[] = [
     'wallet',
 ];
 
-const apiDomain: string = 'api.twitch.tv/api/channels/';
-const accessToken: string = '/access_token';
-export const gqlUrl: string = 'https://gql.twitch.tv/gql';
-
 const usherDomain: string = 'usher.ttvnw.net/api/channel/hls/';
 const usherExt: string = '.m3u8';
 
@@ -50,16 +46,6 @@ export function getChannelFromWebUrl(): string {
     if (nonChannels.indexOf(channel) != -1) {
         return null;
     }
-    return channel;
-}
-
-export function getChannelFromTokenUrl(accessTokenUrl: string): string {
-    const channel = getNameBetweenStrings(
-        accessTokenUrl,
-        apiDomain,
-        accessToken
-    );
-    console.log('channel name parsed access token: ' + channel);
     return channel;
 }
 

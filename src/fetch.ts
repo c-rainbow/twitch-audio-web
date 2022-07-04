@@ -1,14 +1,24 @@
-import { buildUsherUrl, parseAudioOnlyUrl, UrlGroup, gqlUrl } from './url';
+import { buildUsherUrl, parseAudioOnlyUrl } from './url';
 import { AccessTokenGqlPayload } from './accessToken';
 import { getTwitchClientId } from './clientIdManager';
 
+const GQL_ENDPOINT_URL: string = 'https://gql.twitch.tv/gql';
+
+// Fetch text content
 export async function fetchContent(url: string) {
     if (!url) {
+        console.debug('URL is null');
         return null;
     }
+
     try {
         const response = await fetch(url);
-        // TODO: Check if the status if ok
+        if (!response.ok) {
+            console.debug(
+                `fetchContent response is not ok with: ${response.status}`
+            );
+            return null;
+        }
         const respText = await response.text();
         return respText;
     } catch (err) {
@@ -17,44 +27,52 @@ export async function fetchContent(url: string) {
     return null;
 }
 
+// Fetch JSON content
 export async function fetchJson(url: string) {
-    const respText = await fetchContent(url);
-    if (respText) {
-        try {
-            const respJson = JSON.parse(respText);
-            return respJson;
-        } catch (err) {
-            console.log('Response could not be parsed to JSON: ' + respText);
+    if (!url) {
+        console.debug('URL is null');
+        return null;
+    }
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.debug(
+                `fetchJson response is not ok with: ${response.status}`
+            );
+            return null;
         }
+        const respJson = await response.json();
+        return respJson;
+    } catch (err) {
+        console.debug(`fetchJson threw an error: ${err}`);
     }
     return null;
 }
 
-export async function fetchGql(url: string, header: any, body: string) {
+// Run GQL query
+export async function fetchGql(payload: any) {
     try {
-        const startTime = Date.now();
         const twitchClientId = await getTwitchClientId();
-        const postResponse = await fetch(url, {
+        const postResponse = await fetch(GQL_ENDPOINT_URL, {
             method: 'POST',
             headers: {
                 'Client-ID': twitchClientId,
                 'Content-Type': 'text/plain; charset=UTF-8',
             },
-            body,
+            body: JSON.stringify(payload),
         });
         const respJson = await postResponse.json();
-        console.debug('respJson:' + JSON.stringify(respJson));
         return respJson;
     } catch (err) {
         console.debug(`fetchGql threw an error: ${err}`);
     }
+    return null;
 }
 
 export async function fetchAudioStreamUrl(usherUrl: string): Promise<string> {
-    const startTime = Date.now();
     const content = await fetchContent(usherUrl);
     const streamUrl = parseAudioOnlyUrl(content);
-    console.debug('fetchAudioStreamUrl took' + (Date.now() - startTime) + 'ms');
     return streamUrl;
 }
 
@@ -94,16 +112,7 @@ export async function tryFetchingPlaylist(channel: string): Promise<string> {
     const tokenGqlPayload: any = Object.assign({}, AccessTokenGqlPayload);
     tokenGqlPayload['variables']['login'] = channel;
 
-    console.debug('Token GQL payload: ', tokenGqlPayload);
-    const clientId = await getTwitchClientId();
-
-    const gqlResponseJson = await fetchGql(
-        gqlUrl,
-        {
-            'Client-ID': clientId,
-        },
-        JSON.stringify(tokenGqlPayload)
-    );
+    const gqlResponseJson = await fetchGql(tokenGqlPayload);
     console.debug('gqlResponseJson', gqlResponseJson);
 
     if (!gqlResponseJson) {
@@ -120,6 +129,6 @@ export async function tryFetchingPlaylist(channel: string): Promise<string> {
 
     const newUsherUrl = buildUsherUrl(channel, token, sig);
     const respText = await fetchContent(newUsherUrl.getUrl());
-    console.debug('Final response text', respText);
+    //console.debug('Final response text', respText);
     return respText;
 }
