@@ -6,6 +6,6 @@ export const AccessTokenGqlPayload : object = {
     "login": null,  // to be replaced with streamer username
     "isVod": false,
     "vodID": "",
-    "playerType": "site"
+    "playerType": "picture-by-picture"
   }
 }

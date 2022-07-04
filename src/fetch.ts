@@ -121,7 +121,9 @@ export async function tryFetchingPlaylist(channel: string, group: UrlGroup) : Pr
 
     console.debug("Token GQL payload: ", tokenGqlPayload);
 
-    const gqlResponseJson = await fetchGql(gqlUrl, {}, JSON.stringify(tokenGqlPayload));
+    const gqlResponseJson = await fetchGql(gqlUrl, {
+      "Client-ID": twitchClientId,
+    }, JSON.stringify(tokenGqlPayload));
     console.debug("gqlResponseJson", gqlResponseJson);
 
     if(!gqlResponseJson) {

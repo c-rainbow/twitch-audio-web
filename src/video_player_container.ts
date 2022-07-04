@@ -461,17 +461,21 @@ class VideoPlayer {
         this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
-            debug: true,
+            //debug: true,
             // backBufferLength: 1,
             // maxLoadingDelay: 2,
             // maxMaxBufferLength: 5,
-            liveSyncDuration: 0,
-            liveMaxLatencyDuration: 10,
+            liveSyncDuration: 3,
+            enableWorker: true,
             lowLatencyMode: true,
             liveDurationInfinity: true  // true for live stream
         });
-        this.hls.loadSource(mediaUrl);
-        this.hls.attachMedia(this.audioElem); 
+        //this.hls.loadSource(mediaUrl);
+        this.hls.attachMedia(this.audioElem);
+        this.hls.on(Hls.Events.MEDIA_ATTACHED, (function () {
+          console.debug('Audio and hls.js are now bound together !');
+          this.hls.loadSource(mediaUrl);
+        }).bind(this));
         // TODO: Is this safe to play right away after attaching the media?
         // The main example at hls.js website tells to use MANIFEST_PARSED event,
         // but for some reason the event is not triggered with typescript+webpack.
