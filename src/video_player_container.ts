@@ -1,6 +1,6 @@
 
 import { tryFetchingPlaylist } from "./fetch";
-import { getChannelFromWebUrl, GetUrlsResponse, parseAudioOnlyUrl } from "./url";
+import { getChannelFromWebUrl, parseAudioOnlyUrl } from "./url";
 import Hls from "hls.js";
 
 
@@ -461,17 +461,21 @@ class VideoPlayer {
         this.controlGroup?.adjustVolume();  // Match the initial volume with the slider value.
         this.playerElem.appendChild(this.audioElem);
         this.hls = new Hls({
-            debug: true,
+            //debug: true,
             // backBufferLength: 1,
             // maxLoadingDelay: 2,
             // maxMaxBufferLength: 5,
-            liveSyncDuration: 0,
-            liveMaxLatencyDuration: 10,
+            liveSyncDuration: 3,
+            enableWorker: true,
             lowLatencyMode: true,
             liveDurationInfinity: true  // true for live stream
         });
-        this.hls.loadSource(mediaUrl);
-        this.hls.attachMedia(this.audioElem); 
+        //this.hls.loadSource(mediaUrl);
+        this.hls.attachMedia(this.audioElem);
+        this.hls.on(Hls.Events.MEDIA_ATTACHED, (function () {
+          console.debug('Audio and hls.js are now bound together !');
+          this.hls.loadSource(mediaUrl);
+        }).bind(this));
         // TODO: Is this safe to play right away after attaching the media?
         // The main example at hls.js website tells to use MANIFEST_PARSED event,
         // but for some reason the event is not triggered with typescript+webpack.
@@ -558,7 +562,7 @@ class VideoPlayer {
         this.controlGroup?.destroy();
     }
 
-    requestPlay() {
+    async requestPlay() {
         const channel = getChannelFromWebUrl();
         if(!channel) {
             // Currently in a non-channel page. Disable 
@@ -566,29 +570,18 @@ class VideoPlayer {
             return;
         }
 
-        const responseCallback = async function(response: GetUrlsResponse) {
-            if(!response?.webUrl?.channel) {
-                // Currently in a non-channel page. Disable 
-                this.disable();
-                return;
-            }
-
-            const startTime = Date.now();
-            let playlist = await tryFetchingPlaylist(channel, response.webUrl);
-            if(!playlist) {
-                // Offline or hosting another channel. Disable 
-                this.disable();
-                return;
-            }
-        
-            const audioStreamUrl = parseAudioOnlyUrl(playlist);
-            if(audioStreamUrl) {
-                this.container.pauseExcept(this.playerId);
-                this.play(audioStreamUrl);
-            }
+        const playlist = await tryFetchingPlaylist(channel);
+        if(!playlist) {
+            // Offline or hosting another channel. Disable 
+            this.disable();
+            return;
         }
-        chrome.runtime.sendMessage(
-            {message: "get_audio_url", channel: channel}, responseCallback.bind(this)); 
+    
+        const audioStreamUrl = parseAudioOnlyUrl(playlist);
+        if(audioStreamUrl) {
+            this.container.pauseExcept(this.playerId);
+            this.play(audioStreamUrl);
+        }
     }
 
     onRadioButtonClicked() {

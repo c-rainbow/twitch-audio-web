@@ -42,13 +42,13 @@ The extension is created with TypeScript and uses Webpack to build the code.
 Please install webpack and other dependencies for the project.
 
 ```
-> npm i
+> yarn
 ```
 
 After you build the project, two files (dist/background.js, dist/conentscript.js) will be updated with the current TypeScript code.
 
 ```
-> npm run build
+> yarn build
 ```
 
 Load the extension in Chrome browser as instructed in _Install_ section.

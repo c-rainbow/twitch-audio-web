@@ -29,13 +29,13 @@
 이 프로젝트는 TypeScript와 webpack을 사용하여 개발되었습니다. 프로젝트를 다운받은 후 필요한 라이브러리를 설치해주세요.
 
 ```
-> npm i
+> yarn
 ```
 
 웹팩으로 빌드 시 dist/background.js 와 dist/contentscript.js 파일이 업데이트됩니다.
 
 ```
-> npm run build
+> yarn build
 ```
 
 컴파일된 코드를 크롬 브라우저에서 설치해 주세요.
