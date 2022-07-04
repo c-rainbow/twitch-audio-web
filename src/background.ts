@@ -1,5 +1,7 @@
 import { setTwitchClientId } from './clientIdManager';
 
+
+// Store Twitch client ID
 chrome.webRequest.onSendHeaders.addListener(
     function (details) {
         const headers = details.requestHeaders || [];
@@ -14,3 +16,9 @@ chrome.webRequest.onSendHeaders.addListener(
     { urls: ['*://gql.twitch.tv/gql/*'] },
     ['requestHeaders']
 );
+
+
+// webNavigation API only works in background script.
+chrome.webNavigation.onHistoryStateUpdated.addListener(function(details) {
+    console.log('New url:', details.url);
+});
