@@ -8,8 +8,8 @@ import {
 
 
 // Map of channel(string) to url(UsherUrl)
-var usherUrlMap: Map<string, UsherUrl> = new Map();
-var clientIdMap: Map<string, string> = new Map();
+const usherUrlMap: Map<string, UsherUrl> = new Map();
+const clientIdMap: Map<string, string> = new Map();
 
 
 function getUrlGroup(channel: string) : UrlGroup {

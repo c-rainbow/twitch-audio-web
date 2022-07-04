@@ -44,7 +44,7 @@ test("Some test", async () => {
     //console.log(htmlContent);
     document.body.innerHTML = htmlContent;
     
-    var container = new vcontainer.VideoPlayerContainer();
+    const container = new vcontainer.VideoPlayerContainer();
     container.run();
 
     expect(container.players.length).toBe(1);
