@@ -1,3 +1,5 @@
+import log from 'loglevel';
+
 import { buildUsherUrl, parseAudioOnlyUrl } from './url';
 import { AccessTokenGqlPayload } from './accessToken';
 import { getTwitchClientId } from './clientIdManager';
@@ -7,14 +9,14 @@ const GQL_ENDPOINT_URL: string = 'https://gql.twitch.tv/gql';
 // Fetch text content
 export async function fetchContent(url: string) {
     if (!url) {
-        console.debug('URL is null');
+        log.debug('URL is null');
         return null;
     }
 
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            console.debug(
+            log.debug(
                 `fetchContent response is not ok with: ${response.status}`
             );
             return null;
@@ -22,7 +24,7 @@ export async function fetchContent(url: string) {
         const respText = await response.text();
         return respText;
     } catch (err) {
-        console.debug(`fetchContent threw an error: ${err}`);
+        log.debug(`fetchContent threw an error: ${err}`);
     }
     return null;
 }
@@ -30,14 +32,14 @@ export async function fetchContent(url: string) {
 // Fetch JSON content
 export async function fetchJson(url: string) {
     if (!url) {
-        console.debug('URL is null');
+        log.debug('URL is null');
         return null;
     }
 
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            console.debug(
+            log.debug(
                 `fetchJson response is not ok with: ${response.status}`
             );
             return null;
@@ -45,7 +47,7 @@ export async function fetchJson(url: string) {
         const respJson = await response.json();
         return respJson;
     } catch (err) {
-        console.debug(`fetchJson threw an error: ${err}`);
+        log.debug(`fetchJson threw an error: ${err}`);
     }
     return null;
 }
@@ -65,7 +67,7 @@ export async function fetchGql(payload: any) {
         const respJson = await postResponse.json();
         return respJson;
     } catch (err) {
-        console.debug(`fetchGql threw an error: ${err}`);
+        log.debug(`fetchGql threw an error: ${err}`);
     }
     return null;
 }
@@ -113,7 +115,7 @@ export async function tryFetchingPlaylist(channel: string): Promise<string> {
     tokenGqlPayload['variables']['login'] = channel;
 
     const gqlResponseJson = await fetchGql(tokenGqlPayload);
-    console.debug('gqlResponseJson', gqlResponseJson);
+    log.debug('gqlResponseJson', gqlResponseJson);
 
     if (!gqlResponseJson) {
         return null;
@@ -129,6 +131,6 @@ export async function tryFetchingPlaylist(channel: string): Promise<string> {
 
     const newUsherUrl = buildUsherUrl(channel, token, sig);
     const respText = await fetchContent(newUsherUrl.getUrl());
-    //console.debug('Final response text', respText);
+    log.debug('Playlist content', respText);
     return respText;
 }

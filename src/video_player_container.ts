@@ -1,3 +1,4 @@
+import log from 'loglevel';
 import { tryFetchingPlaylist } from './fetch';
 import { getChannelFromWebUrl, parseAudioOnlyUrl } from './url';
 import Hls from 'hls.js';
@@ -333,7 +334,7 @@ class ControlGroup {
         } else if (newState === PlayingState.PLAYING) {
             text = chrome.i18n.getMessage('RADIO_MODE_END');
         } else {
-            console.debug('updateTooltipText for state ' + newState);
+            log.debug('updateTooltipText for state ' + newState);
         }
         this.tooltipElem.textContent = text;
     }
@@ -479,12 +480,12 @@ class VideoPlayer {
         }
 
         if (!mediaUrl) {
-            console.debug('No mediaUrl is found to play');
+            log.debug('No mediaUrl is found to play');
             return;
         }
 
         if (this.audioElem) {
-            console.debug('Audio element already exists');
+            log.debug('Audio element already exists');
             return;
         }
 
@@ -510,7 +511,7 @@ class VideoPlayer {
         this.hls.on(
             Hls.Events.MEDIA_ATTACHED,
             function () {
-                console.debug('Audio and hls.js are now bound together !');
+                log.debug('Audio and hls.js are now bound together !');
                 this.hls.loadSource(mediaUrl);
             }.bind(this)
         );
@@ -518,9 +519,9 @@ class VideoPlayer {
         // The main example at hls.js website tells to use MANIFEST_PARSED event,
         // but for some reason the event is not triggered with typescript+webpack.
         const audioPlayCallback = function () {
-            console.log('Play started');
+            log.info('Play started');
             this.controlGroup?.updateForPlay();
-            console.debug(
+            log.debug(
                 'Time to start playing:',
                 Date.now() - startTime,
                 'ms'
@@ -671,7 +672,7 @@ export class VideoPlayerContainer {
         for (let playerElem of playerElems) {
             // If the div is not already processed
             if (!isProcessed(playerElem)) {
-                console.debug('New video player detected');
+                log.debug('New video player detected');
                 this.createNewPlayer(playerElem as HTMLElement);
             }
         }
@@ -692,7 +693,7 @@ export class VideoPlayerContainer {
         for (let playerElem of playerElems) {
             allPlayerIdsInDom.push(playerElem.getAttribute(playerIdAttr));
         }
-        console.debug('All playerIds in DOM: ' + allPlayerIdsInDom);
+        log.debug('All playerIds in DOM: ' + allPlayerIdsInDom);
 
         const newlist = [];
         for (let player of this.players) {
@@ -700,7 +701,7 @@ export class VideoPlayerContainer {
             if (allPlayerIdsInDom.indexOf(playerId) != -1) {
                 newlist.push(player);
             } else {
-                console.debug(
+                log.debug(
                     `Player ${playerId} is not in DOM anymore. Deleting..`
                 );
                 player.destroy();

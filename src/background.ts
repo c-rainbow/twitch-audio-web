@@ -7,7 +7,6 @@ chrome.webRequest.onSendHeaders.addListener(
             if ('Client-ID' === header.name) {
                 const clientId = header.value;
                 setTwitchClientId(clientId);
-                console.log('Client-ID saved in client map');
             }
         }
     },

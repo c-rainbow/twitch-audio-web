@@ -1,4 +1,6 @@
-const twitchDomain: string = 'twitch.tv/';
+import log from 'loglevel';
+
+
 // Non-exhuastive list of non-channel routes in twitch.tv
 const nonChannels: string[] = [
     '',
@@ -36,7 +38,7 @@ export function getChannelFromWebUrl(): string {
     const url = new URL(location.href);
     const splited = url.pathname.split('/');
     const filtered = splited.filter((elem) => elem.length > 0);
-    console.debug(`Filtered: ${filtered}, url: ${url.href}`);
+    log.debug(`Filtered: ${filtered}, url: ${url.href}`);
     if (filtered.length != 1) {
         return null;
     }
@@ -51,7 +53,7 @@ export function getChannelFromWebUrl(): string {
 
 export function getChannelFromUsherUrl(usherUrl: string): string {
     const channel = getNameBetweenStrings(usherUrl, usherDomain, usherExt);
-    console.log('channel name parsed usher: ' + channel);
+    log.info('channel name parsed usher: ' + channel);
     return channel;
 }
 
@@ -128,7 +130,7 @@ export class UsherUrl {
         if (secondsSinceEpoch + 60 < this.expiresAt) {
             return this.getUrl();
         }
-        console.debug(`Cached URL for ${this.channel} is expired`);
+        log.debug(`Cached URL for ${this.channel} is expired`);
         return null;
     }
 
@@ -164,7 +166,7 @@ export class UsherUrl {
             const expiresAt = tokenJson.expires as number;
             return expiresAt;
         } catch (err) {
-            console.log(`Cannot parse token in usher URL. Error: ${err}`);
+            log.info(`Cannot parse token in usher URL. Error: ${err}`);
         }
         return null;
     }
