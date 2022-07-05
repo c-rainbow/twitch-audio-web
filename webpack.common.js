@@ -5,7 +5,6 @@ module.exports = {
     'background': './src/background.ts',
     'contentscript': './src/contentscript.ts'
   },
-  devtool: 'inline-source-map',
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
@@ -32,8 +31,5 @@ module.exports = {
         exclude: /node_modules/,
       }
     ]
-  },
-  optimization: {
-      minimize: false
   }
 };
