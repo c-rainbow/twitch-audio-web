@@ -1,12 +1,12 @@
 import { setTwitchClientId } from './clientIdManager';
 
 chrome.webRequest.onSendHeaders.addListener(
-    function (details) {
+    async function (details) {
         const headers = details.requestHeaders || [];
         for (const header of headers) {
-            if ('Client-ID' === header.name) {
+            if ('client-id' === header.name.toLocaleLowerCase()) {
                 const clientId = header.value;
-                setTwitchClientId(clientId);
+                await setTwitchClientId(clientId);
             }
         }
     },
