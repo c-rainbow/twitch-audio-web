@@ -10,8 +10,11 @@ The original source code can be found at: https://github.com/c-rainbow/twitch-au
 
 
 Release notes
+v0.5.1 (2022-07-12)
+- Fixed a bug that the radio mode was stuck for ~15 seconds before the audio is played.
+
 v0.5.0 (2022-07-06)
-- Radio mode can now be played 20 minutes after the stream is loaded.
+- Fixed a bug that the radio mode could not start after 20 minutes of page load.
 - Code refactors
 - Updated to manifest 3
 

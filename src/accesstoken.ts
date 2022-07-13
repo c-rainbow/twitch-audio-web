@@ -9,6 +9,6 @@ export const AccessTokenGqlPayload: object = {
         // There is a high chance that ads will be skipped if the player type is
         // one of "thunderdome", "pop_tart", or "picture-by-picture".
         // For more information, see https://github.com/cleanlock/VideoAdBlockForTwitch/blob/2a02cb392c906a1fe555ab30a4e5353f4fa0b714/chrome/remove_video_ads.js#L63-L66
-        playerType: 'picture-by-picture',
+        playerType: 'thunderdome',
     },
 };
