@@ -24,7 +24,7 @@
         "description": "Config name in popup"
     },
     "POPUP_EXT_NAME": {
-        "message": "Twitch Radio Mode v0.5.1",
+        "message": "Twitch Radio Mode v0.6.0",
         "description": "Title of extension in popup window"
     },
     "EXT_CONFIG_HEADER": {

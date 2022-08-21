@@ -24,7 +24,7 @@
         "description": "팝업 설정에서 사용하는 설정 내용"
     },
     "POPUP_EXT_NAME": {
-        "message": "트위치 라디오 모드 v0.5.1",
+        "message": "트위치 라디오 모드 v0.6.0",
         "description": "팝업창에 나타날 앱 이름"
     },
     "EXT_CONFIG_HEADER": {

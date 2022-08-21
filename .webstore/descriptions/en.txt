@@ -10,6 +10,10 @@ The original source code can be found at: https://github.com/c-rainbow/twitch-au
 
 
 Release notes
+v0.6.0 (2022-08-21)
+- Fixed a bug that the radio mode was stuck for ~30 seconds before the audio is played.
+- Used authorization header to get access token if the user is logged in
+
 v0.5.1 (2022-07-12)
 - Fixed a bug that the radio mode was stuck for ~15 seconds before the audio is played.
 - Fixed a bug that the radio mode button is always disabled for some people
