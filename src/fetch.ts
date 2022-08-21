@@ -2,7 +2,7 @@ import log from 'loglevel';
 
 import { buildUsherUrl, parseAudioOnlyUrl } from './url';
 import { AccessTokenGqlPayload } from './accessToken';
-import { getTwitchClientId } from './clientIdManager';
+import { getTwitchClientId, getTwitchOauthToken } from './storageManager';
 
 const GQL_ENDPOINT_URL: string = 'https://gql.twitch.tv/gql';
 
@@ -52,16 +52,27 @@ export async function fetchJson(url: string) {
     return null;
 }
 
+async function getGqlHeaders() {
+  const twitchClientId = await getTwitchClientId();
+  const twitchOauthToken = await getTwitchOauthToken();
+
+  const basicHeader = {
+    'Client-ID': twitchClientId,
+    'Content-Type': 'text/plain; charset=UTF-8',
+  };
+
+  if (twitchOauthToken) {
+    Object.assign(basicHeader, { 'Authorization': twitchOauthToken });
+  }
+  return basicHeader;
+}
+
 // Run GQL query
 export async function fetchGql(payload: any) {
     try {
-        const twitchClientId = await getTwitchClientId();
         const postResponse = await fetch(GQL_ENDPOINT_URL, {
             method: 'POST',
-            headers: {
-                'Client-ID': twitchClientId,
-                'Content-Type': 'text/plain; charset=UTF-8',
-            },
+            headers: await getGqlHeaders(),
             body: JSON.stringify(payload),
         });
         const respJson = await postResponse.json();
