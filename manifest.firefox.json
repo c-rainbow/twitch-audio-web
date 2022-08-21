@@ -1,0 +1,37 @@
+{
+    "manifest_version": 2,
+    "name": "__MSG_EXT_NAME__",
+    "version": "0.5.1",
+
+    "browser_action": {
+        "default_popup": "popup/popup.html"
+    },
+    "default_locale": "en",
+    "description": "__MSG_EXT_DESCRIPTION__",
+    "icons": {
+        "16": "icons/icon_16w.png",
+        "32": "icons/icon_32w.png",
+        "48": "icons/icon_48w.png",
+        "128": "icons/icon_128w.png"
+    },
+
+    "permissions": [
+        "storage",
+        "webRequest",
+        "*://*.twitch.tv/*",
+        "*://*.ext-twitch.tv/*",
+        "*://usher.ttvnw.net/*"
+    ],
+    "background":{
+        "scripts": ["./dist/background.js"]
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.twitch.tv/*"
+            ],
+            "css": ["./css/style.css"],
+            "js": ["./dist/contentscript.js"]
+        }
+    ]
+}
