@@ -19,7 +19,6 @@ module.exports = merge(common, {
         { from: "css", to: "css" },
         { from: "icons", to: "icons" },
         { from: "popup", to: "popup" },
-        { from: "public", to: "public" },
       ],
     }),
   ],
