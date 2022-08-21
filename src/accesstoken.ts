@@ -1,6 +1,6 @@
 export const AccessTokenGqlPayload: object = {
     operationName: 'PlaybackAccessToken_Template',
-    query: 'query PlaybackAccessToken_Template($login: String!, $isLive: Boolean!, $vodID: ID!, $isVod: Boolean!, $playerType: String!) {  streamPlaybackAccessToken(channelName: $login, params: {platform: "web", playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isLive) {    value    signature    __typename  }  videoPlaybackAccessToken(id: $vodID, params: {platform: "web", playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isVod) {    value    signature    __typename  }}',
+    query: 'query PlaybackAccessToken_Template($login: String!, $isLive: Boolean!, $vodID: ID!, $isVod: Boolean!, $playerType: String!) {  streamPlaybackAccessToken(channelName: $login, params: {platform: "android", playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isLive) {    value    signature    __typename  }  videoPlaybackAccessToken(id: $vodID, params: {platform: "android", playerType: $playerType}) @include(if: $isVod) {    value    signature    __typename  }}',
     variables: {
         isLive: true,
         login: null, // to be replaced with streamer username
@@ -9,6 +9,7 @@ export const AccessTokenGqlPayload: object = {
         // There is a high chance that ads will be skipped if the player type is
         // one of "thunderdome", "pop_tart", or "picture-by-picture".
         // For more information, see https://github.com/cleanlock/VideoAdBlockForTwitch/blob/2a02cb392c906a1fe555ab30a4e5353f4fa0b714/chrome/remove_video_ads.js#L63-L66
-        playerType: 'thunderdome',
+        // NOTE: As or 2022-08-20, "thunderdome" and "picture-by-picture" do not work anymore.
+        playerType: 'mobile',
     },
 };
