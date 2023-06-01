@@ -1,7 +1,7 @@
 import log from 'loglevel';
 
 import { buildUsherUrl, parseAudioOnlyUrl } from './url';
-import { AccessTokenGqlPayload } from './accessToken';
+import { AccessTokenGqlPayload } from './accesstoken';
 import { getTwitchClientId, getTwitchOauthToken } from './storageManager';
 
 const GQL_ENDPOINT_URL: string = 'https://gql.twitch.tv/gql';
